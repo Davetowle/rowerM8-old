@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bluetooth, ShoppingBag, BarChart3, Calculator, Waves } from "lucide-react";
+import { Bluetooth, ShoppingBag, BarChart3, Waves } from "lucide-react";
 import { HomeScreen } from "@/screens/HomeScreen";
 import { ActiveScreen } from "@/screens/ActiveScreen";
 import { SummaryScreen } from "@/screens/SummaryScreen";
 import { HistoryScreen } from "@/screens/HistoryScreen";
 import { SplashScreen } from "@/screens/SplashScreen";
 import { ComingSoonScreen } from "@/screens/ComingSoonScreen";
+import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
@@ -16,7 +17,6 @@ const COMING_SOON_SCREENS: Record<string, { title: string; icon: LucideIcon }> =
   "connect-sensor": { title: "Connect Sensor", icon: Bluetooth },
   "buy-sensor": { title: "Buy Sensor", icon: ShoppingBag },
   "fit-chart": { title: "Fit Chart", icon: BarChart3 },
-  "stroke-estimator": { title: "Stroke Estimator", icon: Calculator },
   rowerm8: { title: "rowerM8", icon: Waves },
 };
 
@@ -118,6 +118,9 @@ export default function App() {
         )}
         {view === "history" && (
           <HistoryScreen sessions={sessions} onBack={() => setView("home")} />
+        )}
+        {view === "stroke-estimator" && (
+          <StrokeEstimatorScreen onBack={() => setView("home")} />
         )}
         {isComingSoon && COMING_SOON_SCREENS[view] && (
           <ComingSoonScreen
