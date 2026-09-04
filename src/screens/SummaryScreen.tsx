@@ -20,7 +20,7 @@ export function SummaryScreen({ session, onDone }: Props) {
         <StatCard label="Strokes" value={session.strokeCount.toString()} />
         <StatCard
           label="Distance*"
-          value={Math.round((session.strokeCount * 8) / 10).toString()}
+          value={(session.strokeCount * 8).toString()}
           unit="m"
         />
       </div>
