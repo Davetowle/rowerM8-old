@@ -3,8 +3,6 @@ import { Menu, X, Bluetooth, ShoppingBag, BarChart3, Calculator, Waves } from "l
 import { SpmControl } from "@/components/SpmControl";
 import type { View } from "@/types";
 
-const LOGO = "/strokem8_logo.png";
-
 interface MenuOption {
   label: string;
   icon: typeof Menu;
@@ -52,7 +50,6 @@ export function HomeScreen({ spm, onAdjust, onStart, onHistory, onNavigate }: Pr
       {/* Header */}
       <div className="w-full flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src={LOGO} alt="strokeM8" className="h-8 w-8 rounded-lg object-cover" />
           <span className="text-xl font-bold text-white tracking-tight">strokeM8</span>
         </div>
         <div className="flex items-center gap-2">
