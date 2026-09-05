@@ -31,7 +31,7 @@ export function ActiveScreen({
     <div className="relative min-h-screen overflow-hidden">
       {/* Full-bleed background image */}
       <img
-        src="/5UW1MINSS46bsTii1EQBAa2EmoY0i2Roda_kRTVDeNRabPKqVo5Tj8WDWfpfNYPQZ0yDMGG8TBHaA3Ge.jpg"
+        src="./5UW1MINSS46bsTii1EQBAa2EmoY0i2Roda_kRTVDeNRabPKqVo5Tj8WDWfpfNYPQZ0yDMGG8TBHaA3Ge.jpg"
         alt=""
         className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         style={{ objectPosition: "center 60%" }}

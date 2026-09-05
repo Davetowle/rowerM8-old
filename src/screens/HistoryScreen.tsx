@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { formatTime, formatDate } from "@/lib/format";
 import type { SessionRecord } from "@/types";
 
-const LOGO = "/yNl_fM1QANg5x3G8U2K43-LdmJV3rvmFV9UjdEyZRnQ-zq1sSniTjS4h297hyV3x0mz5tsjsy_WsQ3Nx.jpg";
+const LOGO = "./yNl_fM1QANg5x3G8U2K43-LdmJV3rvmFV9UjdEyZRnQ-zq1sSniTjS4h297hyV3x0mz5tsjsy_WsQ3Nx.jpg";
 
 interface Props {
   sessions: SessionRecord[];
