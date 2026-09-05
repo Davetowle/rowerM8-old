@@ -16,3 +16,12 @@ export interface SessionRecord {
   avgSpm: number;
   strokeCount: number;
 }
+
+export interface DbSession {
+  id: string;
+  start_time: string;
+  end_time: string;
+  duration_sec: number;
+  spm: number;
+  stroke_count: number;
+}

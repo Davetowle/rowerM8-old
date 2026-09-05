@@ -28,11 +28,11 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [view, setView] = useState<View>("home");
-  const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
 
   const metro = useMetronome();
   const spmHistoryRef = useRef<number[]>([]);
+  const sessionStartRef = useRef<number>(0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setIsLoading(false), 4000);
@@ -75,11 +75,12 @@ export default function App() {
     unlockAudio();
     startSilentLoop();
     spmHistoryRef.current = [metro.spm];
+    sessionStartRef.current = Date.now();
     setView("active");
     metro.start(handleCountdownBeep, handleRunning);
   }, [metro, handleCountdownBeep, handleRunning]);
 
-  const handleStop = useCallback(() => {
+  const handleStop = useCallback(async () => {
     metro.stop();
     stopSpeaking();
     stopSilentLoop();
@@ -91,15 +92,30 @@ export default function App() {
               spmHistoryRef.current.length
           )
         : metro.spm;
+    const now = Date.now();
     const sessionRecord: SessionRecord = {
       id: crypto.randomUUID(),
-      date: Date.now(),
+      date: now,
       durationSec: Math.round(duration),
       avgSpm,
       strokeCount: metro.strokeCount,
     };
     setLastSession(sessionRecord);
-    setSessions((prev) => [sessionRecord, ...prev]);
+
+    // Save to Supabase
+    try {
+      const { error } = await supabase.from("sessions").insert({
+        start_time: new Date(sessionStartRef.current).toISOString(),
+        end_time: new Date(now).toISOString(),
+        duration_sec: Math.round(duration),
+        spm: avgSpm,
+        stroke_count: metro.strokeCount,
+      });
+      if (error) console.error("[sessions] insert failed:", error.message);
+    } catch (err) {
+      console.error("[sessions] insert threw:", err);
+    }
+
     setView("summary");
   }, [metro]);
 
@@ -165,7 +181,7 @@ export default function App() {
           <SummaryScreen session={lastSession} onDone={handleSummaryDone} />
         )}
         {view === "history" && (
-          <HistoryScreen sessions={sessions} onBack={() => setView("home")} />
+          <HistoryScreen onBack={() => setView("home")} />
         )}
         {view === "stroke-estimator" && (
           <StrokeEstimatorScreen onBack={() => setView("home")} />
