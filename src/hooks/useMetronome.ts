@@ -34,46 +34,55 @@ export function useMetronome() {
   }, [running]);
 
   const tick = useCallback(() => {
+    // Schedule next frame FIRST so the loop survives any error below.
+    rafRef.current = requestAnimationFrame(tick);
+
     if (!runningRef.current) return;
 
-    const now = performance.now();
-    const cycleDur = 60000 / spmRef.current; // ms
-    const driveDur = cycleDur / 3;
-    const recoveryDur = cycleDur * (2 / 3);
+    console.log("[metronome] tick", { spm: spmRef.current, running: runningRef.current });
 
-    // Elapsed time
-    setElapsed(elapsedAccumRef.current + (now - elapsedStartRef.current) / 1000);
+    try {
+      const now = performance.now();
+      const cycleDur = 60000 / spmRef.current; // ms
+      const driveDur = cycleDur / 3;
+      const recoveryDur = cycleDur * (2 / 3);
 
-    const elapsedInCycle = now - cycleStartRef.current;
+      // Elapsed time
+      setElapsed(elapsedAccumRef.current + (now - elapsedStartRef.current) / 1000);
 
-    if (elapsedInCycle >= cycleDur) {
-      // New cycle — catch beep
-      cycleStartRef.current += cycleDur;
-      // If we drifted too far, resync
-      if (now - cycleStartRef.current > cycleDur) {
-        cycleStartRef.current = now;
+      const elapsedInCycle = now - cycleStartRef.current;
+
+      if (elapsedInCycle >= cycleDur) {
+        // New cycle — catch beep
+        cycleStartRef.current += cycleDur;
+        // If we drifted too far, resync
+        if (now - cycleStartRef.current > cycleDur) {
+          cycleStartRef.current = now;
+        }
+        lastCatchRef.current = cycleStartRef.current;
+        setStrokeCount((c) => c + 1);
+        console.log("[metronome] catch beep, stroke", strokeCount + 1);
+        playBeep("catch");
+        setPhase(0);
+      } else if (elapsedInCycle >= driveDur && now - lastCatchRef.current < driveDur + 50) {
+        // Recovery beep — fire once when we cross into recovery
+        if (now - lastCatchRef.current >= driveDur) {
+          console.log("[metronome] recovery beep");
+          playBeep("recovery");
+          lastCatchRef.current = now; // prevent re-trigger
+        }
       }
-      lastCatchRef.current = cycleStartRef.current;
-      setStrokeCount((c) => c + 1);
-      playBeep("catch");
-      setPhase(0);
-    } else if (elapsedInCycle >= driveDur && now - lastCatchRef.current < driveDur + 50) {
-      // Recovery beep — fire once when we cross into recovery
-      if (now - lastCatchRef.current >= driveDur) {
-        playBeep("recovery");
-        lastCatchRef.current = now; // prevent re-trigger
+
+      // Phase: 0→1 during drive, 1→0 during recovery
+      if (elapsedInCycle < driveDur) {
+        setPhase(elapsedInCycle / driveDur);
+      } else {
+        const inRecovery = elapsedInCycle - driveDur;
+        setPhase(1 - inRecovery / recoveryDur);
       }
+    } catch (err) {
+      console.error("[metronome] tick error (loop continues):", err);
     }
-
-    // Phase: 0→1 during drive, 1→0 during recovery
-    if (elapsedInCycle < driveDur) {
-      setPhase(elapsedInCycle / driveDur);
-    } else {
-      const inRecovery = elapsedInCycle - driveDur;
-      setPhase(1 - inRecovery / recoveryDur);
-    }
-
-    rafRef.current = requestAnimationFrame(tick);
   }, []);
 
   const start = useCallback(() => {
@@ -102,8 +111,16 @@ export function useMetronome() {
     elapsedAccumRef.current += (performance.now() - elapsedStartRef.current) / 1000;
   }, []);
 
-  const adjustSpm = useCallback((delta: number) => {
-    setSpm((s) => Math.max(16, Math.min(40, s + delta)));
+  const adjustSpm = useCallback((delta: number): number => {
+    let next = 0;
+    setSpm((s) => {
+      next = Math.max(16, Math.min(40, s + delta));
+      return next;
+    });
+    // Update ref immediately so the tick loop sees the new value without
+    // waiting for the state effect to flush.
+    spmRef.current = next;
+    return next;
   }, []);
 
   // Cleanup on unmount

@@ -63,8 +63,7 @@ export function StrokeEstimatorScreen({ onBack }: Props) {
   }
 
   function handleAdjust(delta: number) {
-    metro.adjustSpm(delta);
-    const newSpm = Math.max(16, Math.min(40, metro.spm + delta));
+    const newSpm = metro.adjustSpm(delta);
     spmHistoryRef.current.push(newSpm);
     if (metro.running) {
       announceRate(newSpm);

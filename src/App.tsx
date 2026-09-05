@@ -72,9 +72,7 @@ export default function App() {
 
   const handleAdjust = useCallback(
     (delta: number) => {
-      metro.adjustSpm(delta);
-      // Track for averaging; speak the new rate during a live session
-      const newSpm = Math.max(16, Math.min(40, metro.spm + delta));
+      const newSpm = metro.adjustSpm(delta);
       spmHistoryRef.current.push(newSpm);
       if (metro.running) {
         announceRate(newSpm);
