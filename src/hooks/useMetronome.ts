@@ -2,50 +2,81 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { playBeep } from "@/lib/audio";
 
 /**
- * Drives the 2:1 drive:recovery stroke cycle.
+ * Simple stroke-rate metronome: one beep per stroke at the given SPM.
  *
- * At a given SPM, one full cycle = 60/SPM seconds.
- * Drive = cycle/3, Recovery = cycle*2/3 (2:1 ratio).
- * Catch beep fires at cycle start; recovery beep fires after drive duration.
+ * `phase` goes 0→1 across each stroke cycle so the UI bar can animate.
  *
- * `phase` goes 0→1 during drive, then 1→0 during recovery, so a bar can
- * fill during drive and empty during recovery.
+ * A countdown phase ("3, 2, 1, row") runs before the metronome starts
+ * ticking, giving the rower time to get into position.
  */
+export type MetronomeState = "idle" | "countdown" | "running";
+
 export function useMetronome() {
   const [spm, setSpm] = useState(24);
-  const [running, setRunning] = useState(false);
+  const [state, setState] = useState<MetronomeState>("idle");
   const [strokeCount, setStrokeCount] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [phase, setPhase] = useState(0); // 0..1
+  const [countdown, setCountdown] = useState(0); // 3,2,1,0 (0 = "row")
 
   const spmRef = useRef(spm);
-  const runningRef = useRef(running);
+  const stateRef = useRef(state);
   const rafRef = useRef<number | null>(null);
   const cycleStartRef = useRef(0);
-  const lastCatchRef = useRef(0);
   const elapsedStartRef = useRef(0);
   const elapsedAccumRef = useRef(0);
+  const countdownStartRef = useRef(0);
 
   useEffect(() => {
     spmRef.current = spm;
   }, [spm]);
   useEffect(() => {
-    runningRef.current = running;
-  }, [running]);
+    stateRef.current = state;
+  }, [state]);
 
   const tick = useCallback(() => {
     // Schedule next frame FIRST so the loop survives any error below.
     rafRef.current = requestAnimationFrame(tick);
 
-    if (!runningRef.current) return;
+    if (stateRef.current === "idle") return;
 
-    console.log("[metronome] tick", { spm: spmRef.current, running: runningRef.current });
+    console.log("[metronome] tick", {
+      spm: spmRef.current,
+      state: stateRef.current,
+    });
 
     try {
       const now = performance.now();
+
+      // --- Countdown phase ---
+      if (stateRef.current === "countdown") {
+        const elapsedCountdown = (now - countdownStartRef.current) / 1000;
+        const remaining = 4 - elapsedCountdown; // 4 seconds total (3,2,1,row)
+
+        if (remaining <= 0) {
+          // Countdown finished — start the metronome
+          setState("running");
+          stateRef.current = "running";
+          setCountdown(0);
+          cycleStartRef.current = now;
+          elapsedStartRef.current = now;
+          elapsedAccumRef.current = 0;
+          setElapsed(0);
+          setStrokeCount(0);
+          setPhase(0);
+          console.log("[metronome] countdown done — metronome running");
+        } else {
+          const cdValue = Math.ceil(remaining);
+          if (cdValue !== countdown) {
+            setCountdown(cdValue);
+            console.log("[metronome] countdown", cdValue);
+          }
+        }
+        return;
+      }
+
+      // --- Running phase ---
       const cycleDur = 60000 / spmRef.current; // ms
-      const driveDur = cycleDur / 3;
-      const recoveryDur = cycleDur * (2 / 3);
 
       // Elapsed time
       setElapsed(elapsedAccumRef.current + (now - elapsedStartRef.current) / 1000);
@@ -53,57 +84,50 @@ export function useMetronome() {
       const elapsedInCycle = now - cycleStartRef.current;
 
       if (elapsedInCycle >= cycleDur) {
-        // New cycle — catch beep
+        // New stroke — single beep
         cycleStartRef.current += cycleDur;
-        // If we drifted too far, resync
         if (now - cycleStartRef.current > cycleDur) {
           cycleStartRef.current = now;
         }
-        lastCatchRef.current = cycleStartRef.current;
         setStrokeCount((c) => c + 1);
-        console.log("[metronome] catch beep, stroke", strokeCount + 1);
-        playBeep("catch");
+        console.log("[metronome] beep, stroke", strokeCount + 1);
+        playBeep();
         setPhase(0);
-      } else if (elapsedInCycle >= driveDur && now - lastCatchRef.current < driveDur + 50) {
-        // Recovery beep — fire once when we cross into recovery
-        if (now - lastCatchRef.current >= driveDur) {
-          console.log("[metronome] recovery beep");
-          playBeep("recovery");
-          lastCatchRef.current = now; // prevent re-trigger
-        }
       }
 
-      // Phase: 0→1 during drive, 1→0 during recovery
-      if (elapsedInCycle < driveDur) {
-        setPhase(elapsedInCycle / driveDur);
-      } else {
-        const inRecovery = elapsedInCycle - driveDur;
-        setPhase(1 - inRecovery / recoveryDur);
-      }
+      // Phase: 0→1 across the stroke cycle
+      setPhase(Math.min(1, elapsedInCycle / cycleDur));
     } catch (err) {
       console.error("[metronome] tick error (loop continues):", err);
     }
-  }, []);
+  }, [countdown]);
 
-  const start = useCallback(() => {
-    const now = performance.now();
-    cycleStartRef.current = now;
-    lastCatchRef.current = now;
-    elapsedStartRef.current = now;
-    elapsedAccumRef.current = 0;
-    setElapsed(0);
-    setStrokeCount(0);
-    setPhase(0);
-    setRunning(true);
-    runningRef.current = true;
-    playBeep("catch");
-    setStrokeCount(1);
-    rafRef.current = requestAnimationFrame(tick);
-  }, [tick]);
+  /**
+   * Start the countdown. The metronome begins ticking after "3, 2, 1, row".
+   * `onCountdownBeep` is called for each countdown step so the caller can
+   * play a voice or beep.
+   */
+  const start = useCallback(
+    (onCountdownBeep?: (value: number) => void) => {
+      const now = performance.now();
+      countdownStartRef.current = now;
+      setCountdown(3);
+      setState("countdown");
+      stateRef.current = "countdown";
+      setElapsed(0);
+      setStrokeCount(0);
+      setPhase(0);
+      console.log("[metronome] countdown started");
+      onCountdownBeep?.(3);
+      rafRef.current = requestAnimationFrame(tick);
+    },
+    [tick],
+  );
 
   const stop = useCallback(() => {
-    setRunning(false);
-    runningRef.current = false;
+    setState("idle");
+    stateRef.current = "idle";
+    setCountdown(0);
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
@@ -117,8 +141,6 @@ export function useMetronome() {
       next = Math.max(16, Math.min(40, s + delta));
       return next;
     });
-    // Update ref immediately so the tick loop sees the new value without
-    // waiting for the state effect to flush.
     spmRef.current = next;
     return next;
   }, []);
@@ -126,7 +148,7 @@ export function useMetronome() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      runningRef.current = false;
+      stateRef.current = "idle";
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
   }, []);
@@ -135,7 +157,9 @@ export function useMetronome() {
     spm,
     setSpm,
     adjustSpm,
-    running,
+    state,
+    running: state === "running",
+    countdown,
     start,
     stop,
     strokeCount,

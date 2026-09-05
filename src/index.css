@@ -54,3 +54,22 @@ body {
 .animate-menu-in {
   animation: menu-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+@keyframes countdown-pop {
+  0% {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+}
+
+.animate-countdown-pop {
+  animation: countdown-pop 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}

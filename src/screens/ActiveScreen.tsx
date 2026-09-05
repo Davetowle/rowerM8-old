@@ -1,6 +1,6 @@
-import { useEffect } from "react";
 import { SpmControl } from "@/components/SpmControl";
 import { formatTime } from "@/lib/format";
+import type { MetronomeState } from "@/hooks/useMetronome";
 
 interface Props {
   spm: number;
@@ -8,12 +8,24 @@ interface Props {
   strokeCount: number;
   elapsed: number;
   phase: number;
+  countdown: number;
+  metronomeState: MetronomeState;
   onStop: () => void;
 }
 
-export function ActiveScreen({ spm, onAdjust, strokeCount, elapsed, phase, onStop }: Props) {
-  // Drive phase = fill (0→1), Recovery phase = empty (1→0)
+export function ActiveScreen({
+  spm,
+  onAdjust,
+  strokeCount,
+  elapsed,
+  phase,
+  countdown,
+  metronomeState,
+  onStop,
+}: Props) {
   const fillPercent = Math.round(phase * 100);
+  const isCountingDown = metronomeState === "countdown";
+  const countdownLabel = countdown > 0 ? String(countdown) : "ROW";
 
   return (
     <div className="relative min-h-screen">
@@ -50,8 +62,8 @@ export function ActiveScreen({ spm, onAdjust, strokeCount, elapsed, phase, onSto
           {/* Phase bar */}
           <div className="w-full max-w-xs">
             <div className="flex justify-between text-xs uppercase tracking-widest mb-2">
-              <span className="text-cyan-400 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Drive</span>
-              <span className="text-slate-300 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Recovery</span>
+              <span className="text-cyan-400 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Stroke</span>
+              <span className="text-slate-300 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Cycle</span>
             </div>
             <div className="h-4 rounded-full bg-black/30 overflow-hidden border border-white/10">
               <div
@@ -75,6 +87,19 @@ export function ActiveScreen({ spm, onAdjust, strokeCount, elapsed, phase, onSto
           </button>
         </div>
       </div>
+
+      {/* Countdown overlay */}
+      {isCountingDown && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none">
+          <div
+            key={countdown}
+            className="text-9xl font-bold text-white tabular-nums animate-countdown-pop"
+            style={{ textShadow: "0 4px 24px rgba(0,0,0,0.8)" }}
+          >
+            {countdownLabel}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { SplashScreen } from "@/screens/SplashScreen";
 import { ComingSoonScreen } from "@/screens/ComingSoonScreen";
 import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
 import { useMetronome } from "@/hooks/useMetronome";
-import { unlockAudio } from "@/lib/audio";
+import { unlockAudio, startSilentLoop, stopSilentLoop, playBeep } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
 import type { SessionRecord, View } from "@/types";
 import type { LucideIcon } from "lucide-react";
@@ -39,17 +39,32 @@ export default function App() {
     speak(`${spm} strokes per minute`);
   }, []);
 
+  const handleCountdownBeep = useCallback((value: number) => {
+    if (value > 0) {
+      speak(String(value));
+      playBeep(0.7);
+    } else {
+      speak("row");
+      playBeep(0.9);
+    }
+  }, []);
+
   const handleStart = useCallback(() => {
     unlockAudio();
+    startSilentLoop();
     spmHistoryRef.current = [metro.spm];
-    metro.start();
-    announceRate(metro.spm);
     setView("active");
-  }, [metro, announceRate]);
+    metro.start(handleCountdownBeep);
+    // Announce the target rate once the countdown finishes (after ~4s)
+    window.setTimeout(() => {
+      if (metro.running) announceRate(metro.spm);
+    }, 4200);
+  }, [metro, announceRate, handleCountdownBeep]);
 
   const handleStop = useCallback(() => {
     metro.stop();
     stopSpeaking();
+    stopSilentLoop();
     const duration = metro.elapsed;
     const avgSpm =
       spmHistoryRef.current.length > 0
@@ -74,7 +89,7 @@ export default function App() {
     (delta: number) => {
       const newSpm = metro.adjustSpm(delta);
       spmHistoryRef.current.push(newSpm);
-      if (metro.running) {
+      if (metro.state === "running") {
         announceRate(newSpm);
       }
     },
@@ -108,6 +123,8 @@ export default function App() {
             strokeCount={metro.strokeCount}
             elapsed={metro.elapsed}
             phase={metro.phase}
+            countdown={metro.countdown}
+            metronomeState={metro.state}
             onStop={handleStop}
           />
         )}
