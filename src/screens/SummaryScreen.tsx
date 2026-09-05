@@ -8,7 +8,7 @@ interface Props {
 
 export function SummaryScreen({ session, onDone }: Props) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8">
+    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8 bg-slate-950">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-white mb-1">Session Complete</h2>
         <p className="text-sm text-slate-500">{formatDate(session.date)}</p>

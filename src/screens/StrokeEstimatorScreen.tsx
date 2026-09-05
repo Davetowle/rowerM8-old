@@ -71,7 +71,7 @@ export function StrokeEstimatorScreen({ onBack }: Props) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen px-6 py-8">
+    <div className="flex flex-col min-h-screen px-6 py-8 bg-slate-950">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <button

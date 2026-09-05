@@ -28,27 +28,24 @@ export function ActiveScreen({
   const countdownLabel = countdown > 0 ? String(countdown) : "ROW";
 
   return (
-    <div className="relative min-h-screen">
-      {/* Full-bleed background image — pointer-events-none so it never
-          intercepts taps or scrolling. */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage: `url("/5UW1MINSS46bsTii1EQBAa2EmoY0i2Roda_kRTVDeNRabPKqVo5Tj8WDWfpfNYPQZ0yDMGG8TBHaA3Ge.jpg")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center 60%",
-          backgroundRepeat: "no-repeat",
-        }}
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Full-bleed background image */}
+      <img
+        src="/5UW1MINSS46bsTii1EQBAa2EmoY0i2Roda_kRTVDeNRabPKqVo5Tj8WDWfpfNYPQZ0yDMGG8TBHaA3Ge.jpg"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ objectPosition: "center 60%" }}
       />
       {/* Dark gradient overlay for text legibility */}
       <div
-        className="fixed inset-0 z-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none"
         style={{
           background:
             "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)",
         }}
       />
 
+      {/* UI content layer */}
       <div className="relative z-10 flex flex-col items-center justify-between min-h-screen px-6 py-8">
         {/* Top stats */}
         <div className="w-full flex justify-center gap-8 sm:gap-16">

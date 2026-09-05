@@ -105,7 +105,7 @@ export default function App() {
   const isComingSoon = view in COMING_SOON_SCREENS;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white antialiased">
+    <div className="min-h-screen text-white antialiased">
       <div className="max-w-md mx-auto min-h-screen relative">
         {view === "home" && (
           <HomeScreen
