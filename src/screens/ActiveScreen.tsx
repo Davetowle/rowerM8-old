@@ -34,7 +34,7 @@ export function ActiveScreen({
       <div
         className="fixed inset-0 -z-10 pointer-events-none"
         style={{
-          backgroundImage: `url("/yNl_fM1QANg5x3G8U2K43-LdmJV3rvmFV9UjdEyZRnQ-zq1sSniTjS4h297hyV3x0mz5tsjsy_WsQ3Nx.jpg")`,
+          backgroundImage: `url("/5UW1MINSS46bsTii1EQBAa2EmoY0i2Roda_kRTVDeNRabPKqVo5Tj8WDWfpfNYPQZ0yDMGG8TBHaA3Ge.jpg")`,
           backgroundSize: "cover",
           backgroundPosition: "center 60%",
           backgroundRepeat: "no-repeat",
