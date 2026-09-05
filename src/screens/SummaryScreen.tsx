@@ -3,10 +3,12 @@ import type { SessionRecord } from "@/types";
 
 interface Props {
   session: SessionRecord;
-  onDone: () => void;
+  saving: boolean;
+  onSave: () => void;
+  onDiscard: () => void;
 }
 
-export function SummaryScreen({ session, onDone }: Props) {
+export function SummaryScreen({ session, saving, onSave, onDiscard }: Props) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8 bg-slate-950">
       <div className="text-center">
@@ -29,13 +31,24 @@ export function SummaryScreen({ session, onDone }: Props) {
         *Distance is a rough estimate (8 m per stroke) — no hardware sensor in this version.
       </p>
 
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-sm space-y-3">
         <button
-          onClick={onDone}
+          onClick={onSave}
+          disabled={saving}
           className="w-full py-5 rounded-2xl bg-cyan-500 text-slate-950 text-lg font-bold tracking-wide
-                     shadow-lg shadow-cyan-500/30 transition-all hover:bg-cyan-400 active:scale-[0.98]"
+                     shadow-lg shadow-cyan-500/30 transition-all hover:bg-cyan-400 active:scale-[0.98]
+                     disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          DONE
+          {saving ? "SAVING..." : "SAVE SESSION"}
+        </button>
+        <button
+          onClick={onDiscard}
+          disabled={saving}
+          className="w-full py-4 rounded-2xl bg-slate-800 text-slate-400 text-base font-semibold tracking-wide
+                     border border-white/10 transition-all hover:bg-slate-700 hover:text-white active:scale-[0.98]
+                     disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          DISCARD
         </button>
       </div>
     </div>

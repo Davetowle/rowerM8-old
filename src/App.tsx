@@ -80,7 +80,9 @@ export default function App() {
     metro.start(handleCountdownBeep, handleRunning);
   }, [metro, handleCountdownBeep, handleRunning]);
 
-  const handleStop = useCallback(async () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleStop = useCallback(() => {
     metro.stop();
     stopSpeaking();
     stopSilentLoop();
@@ -101,23 +103,34 @@ export default function App() {
       strokeCount: metro.strokeCount,
     };
     setLastSession(sessionRecord);
+    setView("summary");
+  }, [metro]);
 
-    // Save to Supabase
+  const handleSaveSession = useCallback(async () => {
+    if (!lastSession) return;
+    setSaving(true);
     try {
       const { error } = await supabase.from("sessions").insert({
         start_time: new Date(sessionStartRef.current).toISOString(),
-        end_time: new Date(now).toISOString(),
-        duration_sec: Math.round(duration),
-        spm: avgSpm,
-        stroke_count: metro.strokeCount,
+        end_time: new Date(lastSession.date).toISOString(),
+        duration_sec: lastSession.durationSec,
+        spm: lastSession.avgSpm,
+        stroke_count: lastSession.strokeCount,
       });
       if (error) console.error("[sessions] insert failed:", error.message);
     } catch (err) {
       console.error("[sessions] insert threw:", err);
+    } finally {
+      setSaving(false);
+      setLastSession(null);
+      setView("home");
     }
+  }, [lastSession]);
 
-    setView("summary");
-  }, [metro]);
+  const handleDiscardSession = useCallback(() => {
+    setLastSession(null);
+    setView("home");
+  }, []);
 
   const handleAdjust = useCallback(
     (delta: number) => {
@@ -131,11 +144,8 @@ export default function App() {
   );
 
   const handleLogout = useCallback(async () => {
+    setLastSession(null);
     await supabase.auth.signOut();
-    setView("home");
-  }, []);
-
-  const handleSummaryDone = useCallback(() => {
     setView("home");
   }, []);
 
@@ -178,7 +188,12 @@ export default function App() {
           />
         )}
         {view === "summary" && lastSession && (
-          <SummaryScreen session={lastSession} onDone={handleSummaryDone} />
+          <SummaryScreen
+            session={lastSession}
+            saving={saving}
+            onSave={handleSaveSession}
+            onDiscard={handleDiscardSession}
+          />
         )}
         {view === "history" && (
           <HistoryScreen onBack={() => setView("home")} />
