@@ -4,6 +4,15 @@ export function formatTime(totalSec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+export function formatHoursMinutes(totalSec: number): string {
+  const totalMin = Math.floor(totalSec / 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export function formatDate(ts: number): string {
   const d = new Date(ts);
   return d.toLocaleDateString(undefined, {
