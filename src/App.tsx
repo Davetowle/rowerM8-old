@@ -49,17 +49,17 @@ export default function App() {
     }
   }, []);
 
+  const handleRunning = useCallback(() => {
+    announceRate(metro.spm);
+  }, [announceRate, metro.spm]);
+
   const handleStart = useCallback(() => {
     unlockAudio();
     startSilentLoop();
     spmHistoryRef.current = [metro.spm];
     setView("active");
-    metro.start(handleCountdownBeep);
-    // Announce the target rate once the countdown finishes (after ~4s)
-    window.setTimeout(() => {
-      if (metro.running) announceRate(metro.spm);
-    }, 4200);
-  }, [metro, announceRate, handleCountdownBeep]);
+    metro.start(handleCountdownBeep, handleRunning);
+  }, [metro, handleCountdownBeep, handleRunning]);
 
   const handleStop = useCallback(() => {
     metro.stop();
