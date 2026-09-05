@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { Bluetooth, ShoppingBag, BarChart3, Waves } from "lucide-react";
 import { HomeScreen } from "@/screens/HomeScreen";
 import { ActiveScreen } from "@/screens/ActiveScreen";
@@ -7,9 +8,11 @@ import { HistoryScreen } from "@/screens/HistoryScreen";
 import { SplashScreen } from "@/screens/SplashScreen";
 import { ComingSoonScreen } from "@/screens/ComingSoonScreen";
 import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
+import { AuthScreen } from "@/screens/AuthScreen";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio, startSilentLoop, stopSilentLoop, playBeep } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
+import { supabase } from "@/lib/supabase";
 import type { SessionRecord, View } from "@/types";
 import type { LucideIcon } from "lucide-react";
 
@@ -22,6 +25,8 @@ const COMING_SOON_SCREENS: Record<string, { title: string; icon: LucideIcon }> =
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [view, setView] = useState<View>("home");
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
@@ -34,7 +39,20 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  // Speak rate on start and whenever it changes during a session
+  // Initialize auth state and listen for changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthReady(true);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   const announceRate = useCallback((spm: number) => {
     speak(`${spm} strokes per minute`);
   }, []);
@@ -73,15 +91,15 @@ export default function App() {
               spmHistoryRef.current.length
           )
         : metro.spm;
-    const session: SessionRecord = {
+    const sessionRecord: SessionRecord = {
       id: crypto.randomUUID(),
       date: Date.now(),
       durationSec: Math.round(duration),
       avgSpm,
       strokeCount: metro.strokeCount,
     };
-    setLastSession(session);
-    setSessions((prev) => [session, ...prev]);
+    setLastSession(sessionRecord);
+    setSessions((prev) => [sessionRecord, ...prev]);
     setView("summary");
   }, [metro]);
 
@@ -96,11 +114,24 @@ export default function App() {
     [metro, announceRate]
   );
 
+  const handleLogout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setView("home");
+  }, []);
+
   const handleSummaryDone = useCallback(() => {
     setView("home");
   }, []);
 
   if (isLoading) return <SplashScreen />;
+
+  // While auth is initializing, show splash
+  if (!authReady) return <SplashScreen />;
+
+  // Not logged in — show auth screen
+  if (!session) {
+    return <AuthScreen onAuthed={() => setView("home")} />;
+  }
 
   const isComingSoon = view in COMING_SOON_SCREENS;
 
@@ -114,6 +145,8 @@ export default function App() {
             onStart={handleStart}
             onHistory={() => setView("history")}
             onNavigate={(v) => setView(v)}
+            onLogout={handleLogout}
+            userEmail={session.user.email}
           />
         )}
         {view === "active" && (

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, Bluetooth, ShoppingBag, BarChart3, Calculator, Waves } from "lucide-react";
+import { Menu, X, Bluetooth, ShoppingBag, BarChart3, Calculator, Waves, LogOut, User } from "lucide-react";
 import { SpmControl } from "@/components/SpmControl";
 import type { View } from "@/types";
 
@@ -23,9 +23,11 @@ interface Props {
   onStart: () => void;
   onHistory: () => void;
   onNavigate: (view: View) => void;
+  onLogout: () => void;
+  userEmail?: string;
 }
 
-export function HomeScreen({ spm, onAdjust, onStart, onHistory, onNavigate }: Props) {
+export function HomeScreen({ spm, onAdjust, onStart, onHistory, onNavigate, onLogout, userEmail }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +45,11 @@ export function HomeScreen({ spm, onAdjust, onStart, onHistory, onNavigate }: Pr
   function handleMenuSelect(view: View) {
     setMenuOpen(false);
     onNavigate(view);
+  }
+
+  function handleLogout() {
+    setMenuOpen(false);
+    onLogout();
   }
 
   return (
@@ -68,19 +75,35 @@ export function HomeScreen({ spm, onAdjust, onStart, onHistory, onNavigate }: Pr
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             {menuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-slate-800/95 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/50 overflow-hidden z-50 animate-menu-in">
-                {MENU_OPTIONS.map((option, i) => (
+              <div className="absolute right-0 top-full mt-2 w-60 rounded-2xl bg-slate-800/95 backdrop-blur-md border border-white/10 shadow-2xl shadow-black/50 overflow-hidden z-50 animate-menu-in">
+                {/* User profile section */}
+                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/5">
+                  <div className="flex items-center justify-center h-9 w-9 rounded-full bg-cyan-500/15 border border-cyan-500/20">
+                    <User size={16} className="text-cyan-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-white truncate">
+                      {userEmail ?? "Signed in"}
+                    </p>
+                  </div>
+                </div>
+                {MENU_OPTIONS.map((option) => (
                   <button
                     key={option.view}
                     onClick={() => handleMenuSelect(option.view)}
-                    className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-cyan-500/10 ${
-                      i > 0 ? "border-t border-white/5" : ""
-                    }`}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-cyan-500/10 border-t border-white/5"
                   >
                     <option.icon size={18} className="text-cyan-400" />
                     <span className="text-sm font-medium text-white">{option.label}</span>
                   </button>
                 ))}
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-red-500/10 border-t border-white/5"
+                >
+                  <LogOut size={18} className="text-red-400" />
+                  <span className="text-sm font-medium text-red-400">Log Out</span>
+                </button>
               </div>
             )}
           </div>
