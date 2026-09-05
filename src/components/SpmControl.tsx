@@ -23,10 +23,16 @@ export function SpmControl({ spm, onAdjust, size = "xl" }: Props) {
       </button>
 
       <div className="text-center">
-        <div className={`${numSize} font-bold text-white tabular-nums leading-none`}>
+        <div
+          className={`${numSize} font-bold text-white tabular-nums leading-none`}
+          style={{ textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}
+        >
           {spm}
         </div>
-        <div className="text-sm font-medium text-cyan-300/70 tracking-widest uppercase mt-2">
+        <div
+          className="text-sm font-medium text-cyan-300/90 tracking-widest uppercase mt-2"
+          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+        >
           SPM
         </div>
       </div>
