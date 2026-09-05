@@ -120,12 +120,9 @@ export function useMetronome() {
   }, []);
 
   const adjustSpm = useCallback((delta: number): number => {
-    let next = 0;
-    setSpm((s) => {
-      next = Math.max(16, Math.min(40, s + delta));
-      return next;
-    });
+    const next = Math.max(16, Math.min(40, spmRef.current + delta));
     spmRef.current = next;
+    setSpm(next);
     return next;
   }, []);
 
