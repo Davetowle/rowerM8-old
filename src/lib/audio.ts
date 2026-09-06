@@ -14,26 +14,52 @@ function getCtx(): AudioContext {
 }
 
 /**
- * Play a single short beep per stroke.
- * 880 Hz sine wave with a quick decay — projects well through phone speakers.
+ * Play a short percussive "thump" per stroke — a low-pitched sine drop
+ * combined with a brief filtered-noise transient to evoke a hand slap
+ * or dull knock. Under 200ms with a fast exponential decay.
  */
 export function playBeep(volume = 0.9): void {
   const ac = getCtx();
   const now = ac.currentTime;
+
+  // --- Body: sine wave with pitch drop for the "thump" ---
   const osc = ac.createOscillator();
-  const gain = ac.createGain();
-
   osc.type = "sine";
-  osc.frequency.setValueAtTime(880, now);
+  osc.frequency.setValueAtTime(180, now);
+  osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
 
+  const gain = ac.createGain();
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(volume, now + 0.005);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+  gain.gain.linearRampToValueAtTime(volume, now + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
 
   osc.connect(gain);
   gain.connect(ac.destination);
   osc.start(now);
-  osc.stop(now + 0.13);
+  osc.stop(now + 0.16);
+
+  // --- Transient: short low-passed noise burst for the "slap" ---
+  const noiseBuffer = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
+  const noiseData = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < noiseData.length; i++) {
+    noiseData[i] = (Math.random() * 2 - 1) * (1 - i / noiseData.length);
+  }
+  const noise = ac.createBufferSource();
+  noise.buffer = noiseBuffer;
+
+  const noiseFilter = ac.createBiquadFilter();
+  noiseFilter.type = "lowpass";
+  noiseFilter.frequency.value = 800;
+
+  const noiseGain = ac.createGain();
+  noiseGain.gain.setValueAtTime(volume * 0.3, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+
+  noise.connect(noiseFilter);
+  noiseFilter.connect(noiseGain);
+  noiseGain.connect(ac.destination);
+  noise.start(now);
+  noise.stop(now + 0.05);
 }
 
 /**
