@@ -8,6 +8,7 @@ import { HistoryScreen } from "@/screens/HistoryScreen";
 import { SplashScreen } from "@/screens/SplashScreen";
 import { ComingSoonScreen } from "@/screens/ComingSoonScreen";
 import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
+import { DpsScreen } from "@/screens/DpsScreen";
 import { AuthScreen } from "@/screens/AuthScreen";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio, startSilentLoop, stopSilentLoop, playBeep } from "@/lib/audio";
@@ -200,6 +201,9 @@ export default function App() {
         )}
         {view === "stroke-estimator" && (
           <StrokeEstimatorScreen onBack={() => setView("home")} />
+        )}
+        {view === "distance-per-stroke" && (
+          <DpsScreen onBack={() => setView("home")} />
         )}
         {isComingSoon && COMING_SOON_SCREENS[view] && (
           <ComingSoonScreen

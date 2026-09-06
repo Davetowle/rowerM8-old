@@ -7,7 +7,8 @@ export type View =
   | "buy-sensor"
   | "fit-chart"
   | "stroke-estimator"
-  | "rowerm8";
+  | "rowerm8"
+  | "distance-per-stroke";
 
 export interface SessionRecord {
   id: string;
