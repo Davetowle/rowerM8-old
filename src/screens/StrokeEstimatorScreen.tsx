@@ -6,20 +6,20 @@ import { unlockAudio } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
 import { formatTime } from "@/lib/format";
 
-const METERS_PER_STROKE = 8;
 const TARGET_METERS = 500;
 
 interface Props {
   onBack: () => void;
+  metersPerStroke: number;
 }
 
-export function StrokeEstimatorScreen({ onBack }: Props) {
+export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
   const metro = useMetronome();
   const [complete, setComplete] = useState(false);
   const completedRef = useRef(false);
   const spmHistoryRef = useRef<number[]>([]);
 
-  const distance = Math.min(metro.strokeCount * METERS_PER_STROKE, TARGET_METERS);
+  const distance = Math.min(metro.strokeCount * metersPerStroke, TARGET_METERS);
   const progress = Math.min(distance / TARGET_METERS, 1);
 
   const announceRate = useCallback((spm: number) => {
@@ -28,7 +28,7 @@ export function StrokeEstimatorScreen({ onBack }: Props) {
 
   // Auto-stop when distance reaches 500m
   useEffect(() => {
-    if (metro.running && metro.strokeCount * METERS_PER_STROKE >= TARGET_METERS && !completedRef.current) {
+    if (metro.running && metro.strokeCount * metersPerStroke >= TARGET_METERS && !completedRef.current) {
       completedRef.current = true;
       metro.stop();
       stopSpeaking();
@@ -168,7 +168,7 @@ export function StrokeEstimatorScreen({ onBack }: Props) {
       {!complete && !metro.running && (
         <div className="flex-1 flex flex-col items-center justify-center gap-8">
           <p className="text-slate-400 text-sm tracking-wide text-center max-w-xs">
-            Set your target stroke rate, then start. Each stroke counts as {METERS_PER_STROKE}m — reach {TARGET_METERS}m to finish.
+            Set your target stroke rate, then start. Each stroke counts as {metersPerStroke.toFixed(1)}m — reach {TARGET_METERS}m to finish.
           </p>
           <SpmControl spm={metro.spm} onAdjust={handleAdjust} size="lg" />
           <div className="w-full max-w-sm">

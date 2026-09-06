@@ -6,9 +6,10 @@ interface Props {
   saving: boolean;
   onSave: () => void;
   onDiscard: () => void;
+  metersPerStroke: number;
 }
 
-export function SummaryScreen({ session, saving, onSave, onDiscard }: Props) {
+export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStroke }: Props) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8 bg-slate-950">
       <div className="text-center">
@@ -22,13 +23,13 @@ export function SummaryScreen({ session, saving, onSave, onDiscard }: Props) {
         <StatCard label="Strokes" value={session.strokeCount.toString()} />
         <StatCard
           label="Distance*"
-          value={(session.strokeCount * 8).toString()}
+          value={(session.strokeCount * metersPerStroke).toFixed(0)}
           unit="m"
         />
       </div>
 
       <p className="text-xs text-slate-600 text-center max-w-xs">
-        *Distance is a rough estimate (8 m per stroke) — no hardware sensor in this version.
+        *Distance is a rough estimate ({metersPerStroke.toFixed(1)} m per stroke) — no hardware sensor in this version.
       </p>
 
       <div className="w-full max-w-sm space-y-3">

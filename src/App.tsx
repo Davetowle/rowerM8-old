@@ -11,6 +11,7 @@ import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
 import { DpsScreen } from "@/screens/DpsScreen";
 import { AuthScreen } from "@/screens/AuthScreen";
 import { useMetronome } from "@/hooks/useMetronome";
+import { useMetersPerStroke } from "@/hooks/useMetersPerStroke";
 import { unlockAudio, startSilentLoop, stopSilentLoop, playBeep } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
 import { supabase } from "@/lib/supabase";
@@ -32,6 +33,7 @@ export default function App() {
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
 
   const metro = useMetronome();
+  const { metersPerStroke } = useMetersPerStroke();
   const spmHistoryRef = useRef<number[]>([]);
   const sessionStartRef = useRef<number>(0);
 
@@ -194,13 +196,14 @@ export default function App() {
             saving={saving}
             onSave={handleSaveSession}
             onDiscard={handleDiscardSession}
+            metersPerStroke={metersPerStroke}
           />
         )}
         {view === "history" && (
           <HistoryScreen onBack={() => setView("home")} />
         )}
         {view === "stroke-estimator" && (
-          <StrokeEstimatorScreen onBack={() => setView("home")} />
+          <StrokeEstimatorScreen onBack={() => setView("home")} metersPerStroke={metersPerStroke} />
         )}
         {view === "distance-per-stroke" && (
           <DpsScreen onBack={() => setView("home")} />
