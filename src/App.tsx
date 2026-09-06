@@ -33,7 +33,7 @@ export default function App() {
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
 
   const metro = useMetronome();
-  const { metersPerStroke } = useMetersPerStroke();
+  const { metersPerStroke, reload: reloadMetersPerStroke } = useMetersPerStroke();
   const spmHistoryRef = useRef<number[]>([]);
   const sessionStartRef = useRef<number>(0);
 
@@ -206,7 +206,12 @@ export default function App() {
           <StrokeEstimatorScreen onBack={() => setView("home")} metersPerStroke={metersPerStroke} />
         )}
         {view === "distance-per-stroke" && (
-          <DpsScreen onBack={() => setView("home")} />
+          <DpsScreen
+            onBack={() => {
+              reloadMetersPerStroke();
+              setView("home");
+            }}
+          />
         )}
         {isComingSoon && COMING_SOON_SCREENS[view] && (
           <ComingSoonScreen
