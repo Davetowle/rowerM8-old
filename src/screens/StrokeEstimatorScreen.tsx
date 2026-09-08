@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Ship, Play, RotateCcw } from "lucide-react";
+import { ArrowLeft, Ship, Play, RotateCcw, Minus, Plus } from "lucide-react";
 import { SpmControl } from "@/components/SpmControl";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
 import { formatTime } from "@/lib/format";
 
-const TARGET_METERS = 500;
+const DEFAULT_TARGET = 500;
+const DISTANCE_MIN = 100;
+const DISTANCE_MAX = 10000;
+const DISTANCE_STEP = 50;
+const QUICK_TARGETS = [500, 2000];
 
 interface Props {
   onBack: () => void;
@@ -15,26 +19,27 @@ interface Props {
 
 export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
   const metro = useMetronome();
+  const [targetMeters, setTargetMeters] = useState(DEFAULT_TARGET);
   const [complete, setComplete] = useState(false);
   const completedRef = useRef(false);
   const spmHistoryRef = useRef<number[]>([]);
 
-  const distance = Math.min(metro.strokeCount * metersPerStroke, TARGET_METERS);
-  const progress = Math.min(distance / TARGET_METERS, 1);
+  const distance = Math.min(metro.strokeCount * metersPerStroke, targetMeters);
+  const progress = Math.min(distance / targetMeters, 1);
 
   const announceRate = useCallback((spm: number) => {
     speak(`${spm} strokes per minute`);
   }, []);
 
-  // Auto-stop when distance reaches 500m
+  // Auto-stop when distance reaches target
   useEffect(() => {
-    if (metro.running && metro.strokeCount * metersPerStroke >= TARGET_METERS && !completedRef.current) {
+    if (metro.running && metro.strokeCount * metersPerStroke >= targetMeters && !completedRef.current) {
       completedRef.current = true;
       metro.stop();
       stopSpeaking();
       setComplete(true);
     }
-  }, [metro.strokeCount, metro.running, metro]);
+  }, [metro.strokeCount, metro.running, metro, targetMeters]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -50,6 +55,10 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
     spmHistoryRef.current = [metro.spm];
     metro.start();
     announceRate(metro.spm);
+  }
+
+  function adjustDistance(delta: number) {
+    setTargetMeters((d) => Math.max(DISTANCE_MIN, Math.min(DISTANCE_MAX, d + delta)));
   }
 
   function handleReset() {
@@ -99,7 +108,7 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         <div className="w-px bg-white/10" />
         <div className="text-center">
           <div className="text-2xl font-bold text-white tabular-nums">
-            {TARGET_METERS}<span className="text-sm text-slate-400 ml-1">m</span>
+            {targetMeters}<span className="text-sm text-slate-400 ml-1">m</span>
           </div>
           <div className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Target</div>
         </div>
@@ -141,10 +150,10 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         </div>
         <div className="flex justify-between mt-2 text-xs text-slate-500 tabular-nums">
           <span>0m</span>
-          <span>{Math.round(TARGET_METERS / 4)}m</span>
-          <span>{TARGET_METERS / 2}m</span>
-          <span>{Math.round(TARGET_METERS * 3 / 4)}m</span>
-          <span>{TARGET_METERS}m</span>
+          <span>{Math.round(targetMeters / 4)}m</span>
+          <span>{targetMeters / 2}m</span>
+          <span>{Math.round(targetMeters * 3 / 4)}m</span>
+          <span>{targetMeters}m</span>
         </div>
       </div>
 
@@ -164,11 +173,56 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         </div>
       )}
 
-      {/* SPM control */}
+      {/* Distance selector + SPM control */}
       {!complete && !metro.running && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-8">
+        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+          {/* Distance quick-select + stepper */}
+          <div className="w-full max-w-sm">
+            <label className="text-xs uppercase tracking-widest text-slate-500 mb-3 block text-center">
+              Target Distance
+            </label>
+            <div className="flex items-center gap-3 mb-3">
+              <button
+                onClick={() => adjustDistance(-DISTANCE_STEP)}
+                disabled={targetMeters <= DISTANCE_MIN}
+                className="flex items-center justify-center h-11 w-11 rounded-xl bg-slate-800 text-slate-300
+                           border border-white/10 transition-all hover:bg-slate-700 hover:text-white
+                           active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+              >
+                <Minus size={20} />
+              </button>
+              <div className="flex-1 text-center">
+                <span className="text-4xl font-bold text-white tabular-nums">{targetMeters}</span>
+                <span className="text-lg text-slate-500 ml-1">m</span>
+              </div>
+              <button
+                onClick={() => adjustDistance(DISTANCE_STEP)}
+                disabled={targetMeters >= DISTANCE_MAX}
+                className="flex items-center justify-center h-11 w-11 rounded-xl bg-slate-800 text-slate-300
+                           border border-white/10 transition-all hover:bg-slate-700 hover:text-white
+                           active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
+            <div className="flex gap-2">
+              {QUICK_TARGETS.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTargetMeters(t)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95
+                              ${targetMeters === t
+                                ? "bg-cyan-500/15 border border-cyan-400/30 text-cyan-400"
+                                : "bg-slate-800 border border-white/10 text-slate-400 hover:bg-slate-700 hover:text-white"}`}
+                >
+                  {t >= 1000 ? `${t / 1000}K` : `${t}m`}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <p className="text-slate-400 text-sm tracking-wide text-center max-w-xs">
-            Set your target stroke rate, then start. Each stroke counts as {metersPerStroke.toFixed(1)}m — reach {TARGET_METERS}m to finish.
+            Set your target stroke rate, then start. Each stroke counts as {metersPerStroke.toFixed(1)}m — reach {targetMeters}m to finish.
           </p>
           <SpmControl spm={metro.spm} onAdjust={handleAdjust} size="lg" />
           <div className="w-full max-w-sm">
@@ -205,7 +259,7 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
           <div>
             <h2 className="text-2xl font-bold text-white tracking-tight">Piece complete!</h2>
             <p className="mt-1 text-sm text-slate-400">
-              {TARGET_METERS}m in {metro.strokeCount} strokes
+              {targetMeters}m in {metro.strokeCount} strokes
             </p>
             <p className="mt-0.5 text-sm text-slate-400">
               Total time: {formatTime(metro.elapsed)}
