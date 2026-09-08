@@ -179,7 +179,7 @@ export function DpsScreen({ onBack }: Props) {
             />
 
             {/* Proportional zone labels */}
-            <div className="flex mt-2 text-[10px] uppercase tracking-wide text-slate-500">
+            <div className="flex mt-5 text-[10px] uppercase tracking-wide text-slate-500">
               {TIERS.map((t) => {
                 const widthPct = ((t.range[1] - t.range[0]) / totalScale) * 100;
                 return (
