@@ -178,18 +178,17 @@ export function DpsScreen({ onBack }: Props) {
                          [&::-moz-range-thumb]:cursor-grab"
             />
 
-            {/* Proportional zone labels */}
-            <div className="flex mt-5 text-[10px] uppercase tracking-wide text-slate-500">
+            {/* Tick marks at each category position */}
+            <div className="relative mt-3 h-3">
               {TIERS.map((t) => {
-                const widthPct = ((t.range[1] - t.range[0]) / totalScale) * 100;
+                const center = (t.range[0] + t.range[1]) / 2;
+                const leftPct = ((center - DPS_MIN) / totalScale) * 100;
                 return (
                   <div
                     key={t.label}
-                    style={{ width: `${widthPct}%` }}
-                    className="text-center px-0.5 leading-tight"
-                  >
-                    {t.label}
-                  </div>
+                    className="absolute top-0 w-px h-3 bg-slate-600"
+                    style={{ left: `${leftPct}%` }}
+                  />
                 );
               })}
             </div>
