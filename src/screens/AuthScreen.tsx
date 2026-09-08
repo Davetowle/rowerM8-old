@@ -37,7 +37,7 @@ export function AuthScreen({ onAuthed }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 bg-slate-950">
+    <div className="flex flex-col items-center justify-center min-h-screen px-safe-6 pt-safe-8 pb-safe-8 bg-slate-950">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">

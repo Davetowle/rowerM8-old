@@ -14,7 +14,7 @@ interface Props {
 export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStroke, confirmDiscard, setConfirmDiscard }: Props) {
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8 bg-slate-950">
+    <div className="flex flex-col items-center justify-center min-h-screen px-safe-6 pt-safe-8 pb-safe-8 gap-8 bg-slate-950">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-white mb-1">Session Complete</h2>
         <p className="text-sm text-slate-500">{formatDate(session.date)}</p>
@@ -58,7 +58,7 @@ export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStr
 
       {/* Discard confirmation modal */}
       {confirmDiscard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-safe-6 pb-safe bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl bg-slate-800 border border-white/10 shadow-2xl shadow-black/50 p-6">
             <h3 className="text-lg font-bold text-white text-center mb-2">Discard this session?</h3>
             <p className="text-sm text-slate-400 text-center mb-6">

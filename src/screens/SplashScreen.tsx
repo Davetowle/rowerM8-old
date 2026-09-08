@@ -9,7 +9,7 @@ export function SplashScreen() {
       <div className="absolute inset-0 bg-slate-950/65" />
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950/25 via-transparent to-slate-950/70" />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 text-center">
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-safe-6 pt-safe-8 pb-safe-8 text-center">
         <div className="animate-splash-in">
           <p className="text-4xl font-bold tracking-tight text-white drop-shadow-lg">strokeM8</p>
           <p className="mt-3 text-sm font-medium uppercase tracking-[0.28em] text-cyan-100/80">

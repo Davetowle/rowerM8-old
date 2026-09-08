@@ -54,7 +54,7 @@ export function HomeScreen({ spm, onAdjust, onStart, onHistory, onNavigate, onLo
   }
 
   return (
-    <div className="flex flex-col items-center justify-between min-h-screen px-6 py-8 bg-slate-950">
+    <div className="flex flex-col items-center justify-between min-h-screen px-safe-6 pt-safe-8 pb-safe-8 bg-slate-950">
       {/* Header */}
       <div className="w-full flex items-center justify-between">
         <div className="flex items-center gap-2">

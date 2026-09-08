@@ -50,7 +50,7 @@ export function ActiveScreen({
       />
 
       {/* UI content layer */}
-      <div className="relative z-10 flex flex-col items-center justify-between min-h-screen px-6 py-8">
+      <div className="relative z-10 flex flex-col items-center justify-between min-h-screen px-safe-6 pt-safe-8 pb-safe-8">
         {/* Top stats */}
         <div className="w-full flex justify-center gap-8 sm:gap-16">
           <Stat label="Time" value={formatTime(elapsed)} />
