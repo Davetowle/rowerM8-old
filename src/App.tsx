@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Bluetooth, ShoppingBag, BarChart3, Waves } from "lucide-react";
+import { ShoppingBag, BarChart3, Waves } from "lucide-react";
 import { HomeScreen } from "@/screens/HomeScreen";
 import { ActiveScreen } from "@/screens/ActiveScreen";
 import { SummaryScreen } from "@/screens/SummaryScreen";
 import { HistoryScreen } from "@/screens/HistoryScreen";
 import { SplashScreen } from "@/screens/SplashScreen";
 import { ComingSoonScreen } from "@/screens/ComingSoonScreen";
+import { ConnectSensorScreen } from "@/screens/ConnectSensorScreen";
 import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
 import { DpsScreen } from "@/screens/DpsScreen";
 import { AuthScreen } from "@/screens/AuthScreen";
@@ -19,7 +20,6 @@ import type { SessionRecord, View } from "@/types";
 import type { LucideIcon } from "lucide-react";
 
 const COMING_SOON_SCREENS: Record<string, { title: string; icon: LucideIcon }> = {
-  "connect-sensor": { title: "Connect Sensor", icon: Bluetooth },
   "buy-sensor": { title: "Buy Sensor", icon: ShoppingBag },
   "fit-chart": { title: "Fit Chart", icon: BarChart3 },
   rowerm8: { title: "rowerM8", icon: Waves },
@@ -212,6 +212,9 @@ export default function App() {
               setView("home");
             }}
           />
+        )}
+        {view === "connect-sensor" && (
+          <ConnectSensorScreen onBack={() => setView("home")} />
         )}
         {isComingSoon && COMING_SOON_SCREENS[view] && (
           <ComingSoonScreen
