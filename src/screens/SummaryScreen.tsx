@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatTime, formatDate } from "@/lib/format";
 import type { SessionRecord } from "@/types";
 
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStroke }: Props) {
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8 bg-slate-950">
       <div className="text-center">
@@ -43,7 +46,7 @@ export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStr
           {saving ? "SAVING..." : "SAVE SESSION"}
         </button>
         <button
-          onClick={onDiscard}
+          onClick={() => setConfirmDiscard(true)}
           disabled={saving}
           className="w-full py-4 rounded-2xl bg-slate-800 text-slate-400 text-base font-semibold tracking-wide
                      border border-white/10 transition-all hover:bg-slate-700 hover:text-white active:scale-[0.98]
@@ -52,6 +55,34 @@ export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStr
           DISCARD
         </button>
       </div>
+
+      {/* Discard confirmation modal */}
+      {confirmDiscard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-6 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-800 border border-white/10 shadow-2xl shadow-black/50 p-6">
+            <h3 className="text-lg font-bold text-white text-center mb-2">Discard this session?</h3>
+            <p className="text-sm text-slate-400 text-center mb-6">
+              This can't be undone.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setConfirmDiscard(false)}
+                className="w-full py-4 rounded-2xl bg-slate-700 text-white text-base font-semibold tracking-wide
+                           border border-white/10 transition-all hover:bg-slate-600 active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={onDiscard}
+                className="w-full py-4 rounded-2xl bg-red-500 text-white text-base font-bold tracking-wide
+                           shadow-lg shadow-red-500/20 transition-all hover:bg-red-400 active:scale-[0.98]"
+              >
+                Discard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
