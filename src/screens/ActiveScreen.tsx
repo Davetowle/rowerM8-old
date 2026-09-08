@@ -1,5 +1,5 @@
 import { SpmControl } from "@/components/SpmControl";
-import { formatTime } from "@/lib/format";
+import { formatTime, formatPace } from "@/lib/format";
 import type { MetronomeState } from "@/hooks/useMetronome";
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   phase: number;
   countdown: number;
   metronomeState: MetronomeState;
+  metersPerStroke: number;
   onStop: () => void;
 }
 
@@ -21,11 +22,14 @@ export function ActiveScreen({
   phase,
   countdown,
   metronomeState,
+  metersPerStroke,
   onStop,
 }: Props) {
   const fillPercent = Math.round(phase * 100);
   const isCountingDown = metronomeState === "countdown";
   const countdownLabel = countdown > 0 ? String(countdown) : "ROW";
+  const distance = strokeCount * metersPerStroke;
+  const pace = formatPace(distance, elapsed);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -52,6 +56,8 @@ export function ActiveScreen({
           <Stat label="Time" value={formatTime(elapsed)} />
           <div className="w-px bg-white/10" />
           <Stat label="Strokes" value={strokeCount.toString()} />
+          <div className="w-px bg-white/10" />
+          <Stat label="Pace /500m" value={pace} />
         </div>
 
         {/* Center: phase indicator + SPM */}

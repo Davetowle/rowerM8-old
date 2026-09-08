@@ -13,6 +13,16 @@ export function formatHoursMinutes(totalSec: number): string {
   return `${h}h ${m}m`;
 }
 
+export function formatPace(distance: number, elapsedSec: number): string {
+  if (distance <= 0 || elapsedSec <= 0) return "--:--";
+  const speed = distance / elapsedSec;
+  if (speed <= 0) return "--:--";
+  const paceSec = 500 / speed;
+  const m = Math.floor(paceSec / 60);
+  const s = Math.floor(paceSec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export function formatDate(ts: number): string {
   const d = new Date(ts);
   return d.toLocaleDateString(undefined, {

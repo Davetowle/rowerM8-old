@@ -4,7 +4,7 @@ import { SpmControl } from "@/components/SpmControl";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
-import { formatTime } from "@/lib/format";
+import { formatTime, formatPace } from "@/lib/format";
 
 const DEFAULT_TARGET = 500;
 const DISTANCE_MIN = 100;
@@ -98,7 +98,7 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
       </div>
 
       {/* Stats row */}
-      <div className="flex justify-center gap-8 mb-6">
+      <div className="flex justify-center gap-6 mb-6">
         <div className="text-center">
           <div className="text-2xl font-bold text-white tabular-nums">
             {distance}<span className="text-sm text-slate-400 ml-1">m</span>
@@ -116,6 +116,13 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         <div className="text-center">
           <div className="text-2xl font-bold text-white tabular-nums">{metro.strokeCount}</div>
           <div className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Strokes</div>
+        </div>
+        <div className="w-px bg-white/10" />
+        <div className="text-center">
+          <div className="text-2xl font-bold text-cyan-400 tabular-nums">
+            {formatPace(distance, metro.elapsed)}
+          </div>
+          <div className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Pace /500m</div>
         </div>
       </div>
 
@@ -243,9 +250,18 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
       {metro.running && !complete && (
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
           <SpmControl spm={metro.spm} onAdjust={handleAdjust} size="lg" />
-          <div className="text-center">
-            <div className="text-3xl font-bold text-white tabular-nums">{formatTime(metro.elapsed)}</div>
-            <div className="text-xs uppercase tracking-widest text-slate-500 mt-1">Elapsed</div>
+          <div className="flex items-center gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-white tabular-nums">{formatTime(metro.elapsed)}</div>
+              <div className="text-xs uppercase tracking-widest text-slate-500 mt-1">Elapsed</div>
+            </div>
+            <div className="w-px h-12 bg-white/10" />
+            <div className="text-center">
+              <div className="text-3xl font-bold text-cyan-400 tabular-nums">
+                {formatPace(distance, metro.elapsed)}
+              </div>
+              <div className="text-xs uppercase tracking-widest text-slate-500 mt-1">Pace /500m</div>
+            </div>
           </div>
         </div>
       )}

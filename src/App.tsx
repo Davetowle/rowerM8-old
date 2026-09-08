@@ -187,6 +187,7 @@ export default function App() {
             phase={metro.phase}
             countdown={metro.countdown}
             metronomeState={metro.state}
+            metersPerStroke={metersPerStroke}
             onStop={handleStop}
           />
         )}
