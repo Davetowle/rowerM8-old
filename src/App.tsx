@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { App as CapacitorApp } from "@capacitor/app";
 import { ShoppingBag, BarChart3, Waves } from "lucide-react";
 import { HomeScreen } from "@/screens/HomeScreen";
 import { ActiveScreen } from "@/screens/ActiveScreen";
@@ -31,6 +32,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [view, setView] = useState<View>("home");
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const metro = useMetronome();
   const { metersPerStroke, reload: reloadMetersPerStroke } = useMetersPerStroke();
@@ -55,6 +57,29 @@ export default function App() {
 
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Android hardware back button
+  useEffect(() => {
+    let listener: { remove: () => Promise<void> } | undefined;
+
+    CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (view === "summary" && confirmDiscard) {
+        setConfirmDiscard(false);
+      } else if (view !== "home") {
+        setView("home");
+      } else if (canGoBack) {
+        window.history.back();
+      } else {
+        CapacitorApp.exitApp();
+      }
+    }).then((l) => {
+      listener = l;
+    });
+
+    return () => {
+      listener?.remove();
+    };
+  }, [view, confirmDiscard]);
 
   const announceRate = useCallback((spm: number) => {
     speak(`${spm} strokes per minute`);
@@ -198,6 +223,8 @@ export default function App() {
             onSave={handleSaveSession}
             onDiscard={handleDiscardSession}
             metersPerStroke={metersPerStroke}
+            confirmDiscard={confirmDiscard}
+            setConfirmDiscard={setConfirmDiscard}
           />
         )}
         {view === "history" && (

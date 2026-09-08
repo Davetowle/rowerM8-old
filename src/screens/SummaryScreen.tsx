@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { formatTime, formatDate } from "@/lib/format";
 import type { SessionRecord } from "@/types";
 
@@ -8,10 +7,11 @@ interface Props {
   onSave: () => void;
   onDiscard: () => void;
   metersPerStroke: number;
+  confirmDiscard: boolean;
+  setConfirmDiscard: (v: boolean) => void;
 }
 
-export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStroke }: Props) {
-  const [confirmDiscard, setConfirmDiscard] = useState(false);
+export function SummaryScreen({ session, saving, onSave, onDiscard, metersPerStroke, confirmDiscard, setConfirmDiscard }: Props) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 gap-8 bg-slate-950">
