@@ -18,6 +18,10 @@ interface PaceSample {
   paceSec: number;
 }
 
+function floorTo1(value: number): number {
+  return Math.floor(Math.round(value * 100) / 10) / 10;
+}
+
 function formatPaceFromSec(paceSec: number): string {
   if (!isFinite(paceSec) || paceSec <= 0) return "--:--";
   const m = Math.floor(paceSec / 60);
@@ -142,7 +146,7 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
       <div className="flex justify-center gap-6 mb-6">
         <div className="text-center">
           <div className="text-2xl font-bold text-white tabular-nums">
-            {distance}<span className="text-sm text-slate-400 ml-1">m</span>
+            {floorTo1(distance).toFixed(1)}<span className="text-sm text-slate-400 ml-1">m</span>
           </div>
           <div className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Distance</div>
         </div>
