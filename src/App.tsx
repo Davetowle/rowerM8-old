@@ -63,7 +63,7 @@ export default function App() {
     let listener: { remove: () => Promise<void> } | undefined;
 
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
-      if (view === "summary" && confirmDiscard) {
+      if ((view === "summary" || view === "stroke-estimator") && confirmDiscard) {
         setConfirmDiscard(false);
       } else if (view !== "home") {
         setView("home");
@@ -231,7 +231,12 @@ export default function App() {
           <HistoryScreen onBack={() => setView("home")} />
         )}
         {view === "stroke-estimator" && (
-          <StrokeEstimatorScreen onBack={() => setView("home")} metersPerStroke={metersPerStroke} />
+          <StrokeEstimatorScreen
+            onBack={() => setView("home")}
+            metersPerStroke={metersPerStroke}
+            confirmDiscard={confirmDiscard}
+            setConfirmDiscard={setConfirmDiscard}
+          />
         )}
         {view === "distance-per-stroke" && (
           <DpsScreen

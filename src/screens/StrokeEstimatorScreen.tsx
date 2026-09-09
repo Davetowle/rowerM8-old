@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Ship, Play, RotateCcw, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Ship, Play, Minus, Plus } from "lucide-react";
 import { SpmControl } from "@/components/SpmControl";
+import { SummaryScreen } from "@/screens/SummaryScreen";
 import { useMetronome } from "@/hooks/useMetronome";
-import { unlockAudio } from "@/lib/audio";
+import { unlockAudio, startSilentLoop, stopSilentLoop } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
 import { formatTime } from "@/lib/format";
+import { supabase } from "@/lib/supabase";
+import type { SessionRecord } from "@/types";
 
 const DEFAULT_TARGET = 500;
 const DISTANCE_MIN = 100;
@@ -29,19 +32,26 @@ function formatPaceFromSec(paceSec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+type EstimatorPhase = "idle" | "running" | "summary";
+
 interface Props {
   onBack: () => void;
   metersPerStroke: number;
+  confirmDiscard: boolean;
+  setConfirmDiscard: (v: boolean) => void;
 }
 
-export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
+export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard, setConfirmDiscard }: Props) {
   const metro = useMetronome();
   const [targetMeters, setTargetMeters] = useState(DEFAULT_TARGET);
-  const [complete, setComplete] = useState(false);
+  const [phase, setPhase] = useState<EstimatorPhase>("idle");
   const completedRef = useRef(false);
   const spmHistoryRef = useRef<number[]>([]);
   const paceBufferRef = useRef<PaceSample[]>([]);
   const [smoothedPace, setSmoothedPace] = useState("--:--");
+  const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
+  const [saving, setSaving] = useState(false);
+  const sessionStartRef = useRef(0);
 
   const distance = Math.min(metro.strokeCount * metersPerStroke, targetMeters);
   const progress = Math.min(distance / targetMeters, 1);
@@ -50,26 +60,47 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
     speak(`${spm} strokes per minute`);
   }, []);
 
+  const handleStop = useCallback(() => {
+    metro.stop();
+    stopSpeaking();
+    stopSilentLoop();
+    const avgSpm =
+      spmHistoryRef.current.length > 0
+        ? Math.round(
+            spmHistoryRef.current.reduce((a, b) => a + b, 0) /
+              spmHistoryRef.current.length
+          )
+        : metro.spm;
+    const now = Date.now();
+    setLastSession({
+      id: crypto.randomUUID(),
+      date: now,
+      durationSec: Math.round(metro.elapsed),
+      avgSpm,
+      strokeCount: metro.strokeCount,
+    });
+    setPhase("summary");
+  }, [metro]);
+
   // Auto-stop when distance reaches target
   useEffect(() => {
     if (metro.running && metro.strokeCount * metersPerStroke >= targetMeters && !completedRef.current) {
       completedRef.current = true;
-      metro.stop();
-      stopSpeaking();
-      setComplete(true);
+      handleStop();
     }
-  }, [metro.strokeCount, metro.running, metro, targetMeters]);
+  }, [metro.strokeCount, metro.running, metro, targetMeters, handleStop]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopSpeaking();
+      stopSilentLoop();
     };
   }, []);
 
   // Rolling 10-second average pace — display only
   useEffect(() => {
-    if (!metro.running || complete) return;
+    if (!metro.running || phase !== "running") return;
     if (distance <= 0 || metro.elapsed <= 0) return;
 
     const speed = distance / metro.elapsed;
@@ -87,33 +118,23 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
     if (buf.length === 0) return;
     const avg = buf.reduce((sum, s) => sum + s.paceSec, 0) / buf.length;
     setSmoothedPace(formatPaceFromSec(avg));
-  }, [metro.elapsed, distance, metro.running, complete]);
+  }, [metro.elapsed, distance, metro.running, phase]);
 
   function handleStart() {
     unlockAudio();
+    startSilentLoop();
     completedRef.current = false;
-    setComplete(false);
     spmHistoryRef.current = [metro.spm];
     paceBufferRef.current = [];
     setSmoothedPace("--:--");
+    sessionStartRef.current = Date.now();
+    setPhase("running");
     metro.start();
     announceRate(metro.spm);
   }
 
   function adjustDistance(delta: number) {
     setTargetMeters((d) => Math.max(DISTANCE_MIN, Math.min(DISTANCE_MAX, d + delta)));
-  }
-
-  function handleReset() {
-    metro.stop();
-    stopSpeaking();
-    completedRef.current = false;
-    setComplete(false);
-    paceBufferRef.current = [];
-    setSmoothedPace("--:--");
-    metro.start();
-    spmHistoryRef.current = [metro.spm];
-    announceRate(metro.spm);
   }
 
   function handleAdjust(delta: number) {
@@ -124,16 +145,61 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
     }
   }
 
+  async function handleSaveSession() {
+    if (!lastSession) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("sessions").insert({
+        start_time: new Date(sessionStartRef.current).toISOString(),
+        end_time: new Date(lastSession.date).toISOString(),
+        duration_sec: lastSession.durationSec,
+        spm: lastSession.avgSpm,
+        stroke_count: lastSession.strokeCount,
+      });
+      if (error) console.error("[sessions] insert failed:", error.message);
+    } catch (err) {
+      console.error("[sessions] insert threw:", err);
+    } finally {
+      setSaving(false);
+      setLastSession(null);
+      setConfirmDiscard(false);
+      setPhase("idle");
+    }
+  }
+
+  function handleDiscardSession() {
+    setLastSession(null);
+    setConfirmDiscard(false);
+    setPhase("idle");
+  }
+
+  function handleBack() {
+    metro.stop();
+    stopSpeaking();
+    stopSilentLoop();
+    onBack();
+  }
+
+  if (phase === "summary" && lastSession) {
+    return (
+      <SummaryScreen
+        session={lastSession}
+        saving={saving}
+        onSave={handleSaveSession}
+        onDiscard={handleDiscardSession}
+        metersPerStroke={metersPerStroke}
+        confirmDiscard={confirmDiscard}
+        setConfirmDiscard={setConfirmDiscard}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen px-safe-6 pt-safe-8 pb-safe-8 bg-slate-950">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <button
-          onClick={() => {
-            metro.stop();
-            stopSpeaking();
-            onBack();
-          }}
+          onClick={handleBack}
           className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"
         >
           <ArrowLeft size={18} />
@@ -174,21 +240,15 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
       {/* Race lane */}
       <div className="mb-8">
         <div className="relative h-16 rounded-2xl bg-slate-800/60 border border-white/5 overflow-hidden">
-          {/* Lane markings */}
           <div className="absolute inset-0 flex items-center">
             {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="flex-1 border-r border-white/5 last:border-r-0"
-              />
+              <div key={i} className="flex-1 border-r border-white/5 last:border-r-0" />
             ))}
           </div>
-          {/* Progress fill */}
           <div
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500/20 to-cyan-400/20 transition-[width] duration-100 ease-linear"
             style={{ width: `${progress * 100}%` }}
           />
-          {/* Boat marker */}
           <div
             className="absolute top-1/2 -translate-y-1/2 transition-[left] duration-100 ease-linear"
             style={{ left: `calc(${progress * 100}% - 16px)` }}
@@ -197,7 +257,6 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
               <Ship size={18} className="text-slate-950" />
             </div>
           </div>
-          {/* Finish line */}
           <div className="absolute inset-y-0 right-0 w-0.5 bg-cyan-300/40" />
         </div>
         <div className="flex justify-between mt-2 text-xs text-slate-500 tabular-nums">
@@ -209,8 +268,8 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         </div>
       </div>
 
-      {/* Phase bar (reused concept from ActiveScreen) */}
-      {metro.running && !complete && (
+      {/* Phase bar during running */}
+      {phase === "running" && (
         <div className="w-full max-w-xs mx-auto mb-8">
           <div className="flex justify-between text-xs uppercase tracking-widest mb-2">
             <span className="text-cyan-400 font-medium">Drive</span>
@@ -225,10 +284,9 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         </div>
       )}
 
-      {/* Distance selector + SPM control */}
-      {!complete && !metro.running && (
+      {/* Idle: Distance selector + SPM control + Start */}
+      {phase === "idle" && (
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
-          {/* Distance quick-select + stepper */}
           <div className="w-full max-w-sm">
             <label className="text-xs uppercase tracking-widest text-slate-500 mb-3 block text-center">
               Target Distance
@@ -291,8 +349,8 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         </div>
       )}
 
-      {/* Live SPM during run */}
-      {metro.running && !complete && (
+      {/* Running: SPM control + stats + Stop */}
+      {phase === "running" && (
         <div className="flex-1 flex flex-col items-center justify-center gap-6">
           <SpmControl spm={metro.spm} onAdjust={handleAdjust} size="lg" />
           <div className="flex items-center gap-8">
@@ -308,44 +366,13 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
               <div className="text-xs uppercase tracking-widest text-slate-500 mt-1">Pace /500m</div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Complete message */}
-      {complete && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-6 text-center">
-          <div className="flex items-center justify-center h-20 w-20 rounded-3xl bg-cyan-500/10 border border-cyan-400/20">
-            <Ship size={36} className="text-cyan-400" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Piece complete!</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              {targetMeters}m in {metro.strokeCount} strokes
-            </p>
-            <p className="mt-0.5 text-sm text-slate-400">
-              Total time: {formatTime(metro.elapsed)}
-            </p>
-          </div>
-          <div className="w-full max-w-sm flex flex-col gap-3">
+          <div className="w-full max-w-sm">
             <button
-              onClick={handleReset}
-              className="w-full py-5 rounded-2xl bg-cyan-500 text-slate-950 text-lg font-bold tracking-wide
-                         shadow-lg shadow-cyan-500/30 transition-all hover:bg-cyan-400 active:scale-[0.98]
-                         flex items-center justify-center gap-2"
+              onClick={handleStop}
+              className="w-full py-5 rounded-2xl bg-red-500/90 text-white text-lg font-bold tracking-wide
+                         shadow-lg shadow-red-500/20 transition-all hover:bg-red-500 active:scale-[0.98]"
             >
-              <RotateCcw size={20} />
-              Go Again
-            </button>
-            <button
-              onClick={() => {
-                metro.stop();
-                stopSpeaking();
-                onBack();
-              }}
-              className="w-full py-4 rounded-2xl bg-white/5 text-white text-sm font-medium
-                         border border-white/10 transition-all hover:bg-white/10 active:scale-[0.98]"
-            >
-              Back to Home
+              STOP
             </button>
           </div>
         </div>
