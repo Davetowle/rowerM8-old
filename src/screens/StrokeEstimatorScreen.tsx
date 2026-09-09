@@ -4,13 +4,26 @@ import { SpmControl } from "@/components/SpmControl";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio } from "@/lib/audio";
 import { speak, stopSpeaking } from "@/lib/speech";
-import { formatTime, formatPace } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 
 const DEFAULT_TARGET = 500;
 const DISTANCE_MIN = 100;
 const DISTANCE_MAX = 10000;
 const DISTANCE_STEP = 50;
 const QUICK_TARGETS = [500, 2000];
+const PACE_WINDOW_MS = 10_000;
+
+interface PaceSample {
+  ts: number;
+  paceSec: number;
+}
+
+function formatPaceFromSec(paceSec: number): string {
+  if (!isFinite(paceSec) || paceSec <= 0) return "--:--";
+  const m = Math.floor(paceSec / 60);
+  const s = Math.floor(paceSec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 interface Props {
   onBack: () => void;
@@ -23,6 +36,8 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
   const [complete, setComplete] = useState(false);
   const completedRef = useRef(false);
   const spmHistoryRef = useRef<number[]>([]);
+  const paceBufferRef = useRef<PaceSample[]>([]);
+  const [smoothedPace, setSmoothedPace] = useState("--:--");
 
   const distance = Math.min(metro.strokeCount * metersPerStroke, targetMeters);
   const progress = Math.min(distance / targetMeters, 1);
@@ -48,11 +63,35 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
     };
   }, []);
 
+  // Rolling 10-second average pace — display only
+  useEffect(() => {
+    if (!metro.running || complete) return;
+    if (distance <= 0 || metro.elapsed <= 0) return;
+
+    const speed = distance / metro.elapsed;
+    if (speed <= 0) return;
+    const instantPaceSec = 500 / speed;
+
+    const now = Date.now();
+    const buf = paceBufferRef.current;
+    buf.push({ ts: now, paceSec: instantPaceSec });
+
+    while (buf.length > 0 && now - buf[0].ts > PACE_WINDOW_MS) {
+      buf.shift();
+    }
+
+    if (buf.length === 0) return;
+    const avg = buf.reduce((sum, s) => sum + s.paceSec, 0) / buf.length;
+    setSmoothedPace(formatPaceFromSec(avg));
+  }, [metro.elapsed, distance, metro.running, complete]);
+
   function handleStart() {
     unlockAudio();
     completedRef.current = false;
     setComplete(false);
     spmHistoryRef.current = [metro.spm];
+    paceBufferRef.current = [];
+    setSmoothedPace("--:--");
     metro.start();
     announceRate(metro.spm);
   }
@@ -66,6 +105,8 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
     stopSpeaking();
     completedRef.current = false;
     setComplete(false);
+    paceBufferRef.current = [];
+    setSmoothedPace("--:--");
     metro.start();
     spmHistoryRef.current = [metro.spm];
     announceRate(metro.spm);
@@ -120,7 +161,7 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
         <div className="w-px bg-white/10" />
         <div className="text-center">
           <div className="text-2xl font-bold text-cyan-400 tabular-nums">
-            {formatPace(distance, metro.elapsed)}
+            {smoothedPace}
           </div>
           <div className="text-[10px] uppercase tracking-widest text-slate-500 mt-0.5">Pace /500m</div>
         </div>
@@ -258,7 +299,7 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke }: Props) {
             <div className="w-px h-12 bg-white/10" />
             <div className="text-center">
               <div className="text-3xl font-bold text-cyan-400 tabular-nums">
-                {formatPace(distance, metro.elapsed)}
+                {smoothedPace}
               </div>
               <div className="text-xs uppercase tracking-widest text-slate-500 mt-1">Pace /500m</div>
             </div>
