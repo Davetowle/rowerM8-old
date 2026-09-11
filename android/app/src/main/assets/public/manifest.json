@@ -1,0 +1,23 @@
+{
+  "name": "strokeM8",
+  "short_name": "strokeM8",
+  "description": "Rowing Stroke Metronome — find your rhythm.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "./d1e7a3c5-e769-4150-a9b1-ee00f701ad49.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./d1e7a3c5-e769-4150-a9b1-ee00f701ad49.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
