@@ -7,7 +7,6 @@ interface Props {
   onAdjust: (delta: number) => void;
   strokeCount: number;
   elapsed: number;
-  phase: number;
   countdown: number;
   metronomeState: MetronomeState;
   metersPerStroke: number;
@@ -19,13 +18,11 @@ export function ActiveScreen({
   onAdjust,
   strokeCount,
   elapsed,
-  phase,
   countdown,
   metronomeState,
   metersPerStroke,
   onStop,
 }: Props) {
-  const fillPercent = Math.round(phase * 100);
   const isCountingDown = metronomeState === "countdown";
   const countdownLabel = countdown > 0 ? String(countdown) : "ROW";
   const distance = strokeCount * metersPerStroke;
@@ -60,20 +57,13 @@ export function ActiveScreen({
           <Stat label="Pace /500m" value={pace} />
         </div>
 
-        {/* Center: phase indicator + SPM */}
+        {/* Center: stroke pulse dot + SPM */}
         <div className="flex flex-col items-center gap-10 w-full">
-          {/* Phase bar */}
-          <div className="w-full max-w-xs">
-            <div className="flex justify-between text-xs uppercase tracking-widest mb-2">
-              <span className="text-cyan-400 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Stroke</span>
-              <span className="text-slate-300 font-medium" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.6)" }}>Cycle</span>
-            </div>
-            <div className="h-4 rounded-full bg-black/30 overflow-hidden border border-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-[width] duration-75 ease-linear"
-                style={{ width: `${fillPercent}%` }}
-              />
-            </div>
+          <div className="h-10 flex items-center justify-center">
+            <div
+              key={strokeCount}
+              className="h-3 w-3 rounded-full bg-slate-700 animate-stroke-pulse"
+            />
           </div>
 
           <SpmControl spm={spm} onAdjust={onAdjust} size="lg" />

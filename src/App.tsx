@@ -210,7 +210,7 @@ export default function App() {
             onAdjust={handleAdjust}
             strokeCount={metro.strokeCount}
             elapsed={metro.elapsed}
-            phase={metro.phase}
+
             countdown={metro.countdown}
             metronomeState={metro.state}
             metersPerStroke={metersPerStroke}
