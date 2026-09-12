@@ -1,6 +1,17 @@
+import { useEffect, useRef, useState } from "react";
 import { SpmControl } from "@/components/SpmControl";
-import { formatTime, formatPace } from "@/lib/format";
+import { formatTime } from "@/lib/format";
 import type { MetronomeState } from "@/hooks/useMetronome";
+
+const PACE_WINDOW_STROKES = 5;
+const PACE_UPDATE_INTERVAL_MS = 10_000;
+
+function formatPaceFromSec(paceSec: number): string {
+  if (!isFinite(paceSec) || paceSec <= 0) return "--:--";
+  const m = Math.floor(paceSec / 60);
+  const s = Math.floor(paceSec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 interface Props {
   spm: number;
@@ -25,8 +36,49 @@ export function ActiveScreen({
 }: Props) {
   const isCountingDown = metronomeState === "countdown";
   const countdownLabel = countdown > 0 ? String(countdown) : "ROW";
-  const distance = strokeCount * metersPerStroke;
-  const pace = formatPace(distance, elapsed);
+
+  const lastStrokeTsRef = useRef(0);
+  const strokePaceBufferRef = useRef<number[]>([]);
+  const lastPaceDisplayUpdateRef = useRef(0);
+  const [smoothedPace, setSmoothedPace] = useState("--:--");
+
+  useEffect(() => {
+    if (metronomeState !== "running") return;
+    if (strokeCount === 0) return;
+
+    const now = Date.now();
+
+    if (lastStrokeTsRef.current > 0) {
+      const cycleDurSec = (now - lastStrokeTsRef.current) / 1000;
+      if (cycleDurSec > 0 && metersPerStroke > 0) {
+        const paceSec = (500 / metersPerStroke) * cycleDurSec;
+        strokePaceBufferRef.current.push(paceSec);
+        if (strokePaceBufferRef.current.length > PACE_WINDOW_STROKES) {
+          strokePaceBufferRef.current.shift();
+        }
+      }
+    }
+    lastStrokeTsRef.current = now;
+
+    if (strokePaceBufferRef.current.length < PACE_WINDOW_STROKES) return;
+
+    const bestPace = Math.min(...strokePaceBufferRef.current);
+
+    if (lastPaceDisplayUpdateRef.current === 0 || now - lastPaceDisplayUpdateRef.current >= PACE_UPDATE_INTERVAL_MS) {
+      setSmoothedPace(formatPaceFromSec(bestPace));
+      lastPaceDisplayUpdateRef.current = now;
+    }
+  }, [strokeCount, metronomeState, metersPerStroke]);
+
+  // Reset pace tracking when leaving running state
+  useEffect(() => {
+    if (metronomeState !== "running") {
+      lastStrokeTsRef.current = 0;
+      strokePaceBufferRef.current = [];
+      lastPaceDisplayUpdateRef.current = 0;
+      setSmoothedPace("--:--");
+    }
+  }, [metronomeState]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -54,7 +106,7 @@ export function ActiveScreen({
           <div className="w-px bg-white/10" />
           <Stat label="Strokes" value={strokeCount.toString()} />
           <div className="w-px bg-white/10" />
-          <Stat label="Pace /500m" value={pace} />
+          <Stat label="Pace /500m" value={smoothedPace} />
         </div>
 
         {/* Center: stroke pulse dot + SPM */}
