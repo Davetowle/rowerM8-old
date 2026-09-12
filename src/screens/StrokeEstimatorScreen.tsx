@@ -14,12 +14,8 @@ const DISTANCE_MIN = 100;
 const DISTANCE_MAX = 10000;
 const DISTANCE_STEP = 50;
 const QUICK_TARGETS = [500, 2000];
-const PACE_WINDOW_MS = 10_000;
-
-interface PaceSample {
-  ts: number;
-  paceSec: number;
-}
+const PACE_WINDOW_STROKES = 5;
+const PACE_UPDATE_INTERVAL_MS = 10_000;
 
 function floorTo1(value: number): number {
   return Math.floor(Math.round(value * 100) / 10) / 10;
@@ -47,7 +43,9 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
   const [phase, setPhase] = useState<EstimatorPhase>("idle");
   const completedRef = useRef(false);
   const spmHistoryRef = useRef<number[]>([]);
-  const paceBufferRef = useRef<PaceSample[]>([]);
+  const lastStrokeTsRef = useRef(0);
+  const strokePaceBufferRef = useRef<number[]>([]);
+  const lastPaceDisplayUpdateRef = useRef(0);
   const [smoothedPace, setSmoothedPace] = useState("--:--");
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null);
   const [saving, setSaving] = useState(false);
@@ -98,34 +96,43 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
     };
   }, []);
 
-  // Rolling 10-second average pace — display only
+  // Per-stroke best pace — display updates at most every 10 seconds
   useEffect(() => {
     if (!metro.running || phase !== "running") return;
-    if (distance <= 0 || metro.elapsed <= 0) return;
-
-    const speed = distance / metro.elapsed;
-    if (speed <= 0) return;
-    const instantPaceSec = 500 / speed;
+    if (metro.strokeCount === 0) return;
 
     const now = Date.now();
-    const buf = paceBufferRef.current;
-    buf.push({ ts: now, paceSec: instantPaceSec });
 
-    while (buf.length > 0 && now - buf[0].ts > PACE_WINDOW_MS) {
-      buf.shift();
+    if (lastStrokeTsRef.current > 0) {
+      const cycleDurSec = (now - lastStrokeTsRef.current) / 1000;
+      if (cycleDurSec > 0 && metersPerStroke > 0) {
+        const paceSec = (500 / metersPerStroke) * cycleDurSec;
+        strokePaceBufferRef.current.push(paceSec);
+        if (strokePaceBufferRef.current.length > PACE_WINDOW_STROKES) {
+          strokePaceBufferRef.current.shift();
+        }
+      }
     }
+    lastStrokeTsRef.current = now;
 
-    if (buf.length === 0) return;
-    const avg = buf.reduce((sum, s) => sum + s.paceSec, 0) / buf.length;
-    setSmoothedPace(formatPaceFromSec(avg));
-  }, [metro.elapsed, distance, metro.running, phase]);
+    if (strokePaceBufferRef.current.length < PACE_WINDOW_STROKES) return;
+
+    const bestPace = Math.min(...strokePaceBufferRef.current);
+
+    if (lastPaceDisplayUpdateRef.current === 0 || now - lastPaceDisplayUpdateRef.current >= PACE_UPDATE_INTERVAL_MS) {
+      setSmoothedPace(formatPaceFromSec(bestPace));
+      lastPaceDisplayUpdateRef.current = now;
+    }
+  }, [metro.strokeCount, metro.running, phase, metersPerStroke]);
 
   function handleStart() {
     unlockAudio();
     startSilentLoop();
     completedRef.current = false;
     spmHistoryRef.current = [metro.spm];
-    paceBufferRef.current = [];
+    lastStrokeTsRef.current = 0;
+    strokePaceBufferRef.current = [];
+    lastPaceDisplayUpdateRef.current = 0;
     setSmoothedPace("--:--");
     sessionStartRef.current = Date.now();
     setPhase("running");
