@@ -18,7 +18,7 @@ function getCtx(): AudioContext {
  * combined with a brief filtered-noise transient to evoke a hand slap
  * or dull knock. Under 200ms with a fast exponential decay.
  */
-export function playBeep(volume = 0.9): void {
+export function playBeep(volume = 1.0): void {
   const ac = getCtx();
   const now = ac.currentTime;
 
@@ -52,7 +52,7 @@ export function playBeep(volume = 0.9): void {
   noiseFilter.frequency.value = 800;
 
   const noiseGain = ac.createGain();
-  noiseGain.gain.setValueAtTime(volume * 0.3, now);
+  noiseGain.gain.setValueAtTime(volume * 0.45, now);
   noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
 
   noise.connect(noiseFilter);
