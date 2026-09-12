@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { App as CapacitorApp } from "@capacitor/app";
-import { ShoppingBag, BarChart3, Waves } from "lucide-react";
+import { ShoppingBag, Waves } from "lucide-react";
 import { HomeScreen } from "@/screens/HomeScreen";
 import { ActiveScreen } from "@/screens/ActiveScreen";
 import { SummaryScreen } from "@/screens/SummaryScreen";
@@ -10,6 +10,7 @@ import { SplashScreen } from "@/screens/SplashScreen";
 import { ComingSoonScreen } from "@/screens/ComingSoonScreen";
 import { ConnectSensorScreen } from "@/screens/ConnectSensorScreen";
 import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
+import { HeartRateMonitorScreen } from "@/screens/HeartRateMonitorScreen";
 import { DpsScreen } from "@/screens/DpsScreen";
 import { AuthScreen } from "@/screens/AuthScreen";
 import { useMetronome } from "@/hooks/useMetronome";
@@ -22,7 +23,6 @@ import type { LucideIcon } from "lucide-react";
 
 const COMING_SOON_SCREENS: Record<string, { title: string; icon: LucideIcon }> = {
   "buy-sensor": { title: "Buy Sensor", icon: ShoppingBag },
-  "fit-chart": { title: "Fit Chart", icon: BarChart3 },
   rowerm8: { title: "rowerM8", icon: Waves },
 };
 
@@ -248,6 +248,9 @@ export default function App() {
         )}
         {view === "connect-sensor" && (
           <ConnectSensorScreen onBack={() => setView("home")} />
+        )}
+        {view === "heart-rate-monitor" && (
+          <HeartRateMonitorScreen onBack={() => setView("home")} />
         )}
         {isComingSoon && COMING_SOON_SCREENS[view] && (
           <ComingSoonScreen

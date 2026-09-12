@@ -5,7 +5,7 @@ export type View =
   | "history"
   | "connect-sensor"
   | "buy-sensor"
-  | "fit-chart"
+  | "heart-rate-monitor"
   | "stroke-estimator"
   | "rowerm8"
   | "distance-per-stroke";

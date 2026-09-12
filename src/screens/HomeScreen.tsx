@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, Bluetooth, ShoppingBag, BarChart3, Calculator, Waves, LogOut, User, Ruler } from "lucide-react";
+import { Menu, X, Bluetooth, ShoppingBag, HeartPulse, Calculator, Waves, LogOut, User, Ruler } from "lucide-react";
 import { SpmControl } from "@/components/SpmControl";
 import type { View } from "@/types";
 
@@ -13,7 +13,7 @@ const MENU_OPTIONS: MenuOption[] = [
   { label: "Find Your Distance per Stroke", icon: Ruler, view: "distance-per-stroke" },
   { label: "Connect Sensor", icon: Bluetooth, view: "connect-sensor" },
   { label: "Buy Sensor", icon: ShoppingBag, view: "buy-sensor" },
-  { label: "Fit Chart", icon: BarChart3, view: "fit-chart" },
+  { label: "Heart Rate Monitor", icon: HeartPulse, view: "heart-rate-monitor" },
   { label: "Stroke Estimator", icon: Calculator, view: "stroke-estimator" },
   { label: "rowerM8", icon: Waves, view: "rowerm8" },
 ];
