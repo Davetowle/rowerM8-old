@@ -23,7 +23,7 @@ import type { LucideIcon } from "lucide-react";
 
 const COMING_SOON_SCREENS: Record<string, { title: string; icon: LucideIcon }> = {
   "buy-sensor": { title: "Buy Sensor", icon: ShoppingBag },
-  rowerm8: { title: "rowerM8", icon: Waves },
+  rowerm8: { title: "ergM8", icon: Waves },
 };
 
 export default function App() {

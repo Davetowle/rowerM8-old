@@ -15,7 +15,7 @@ const MENU_OPTIONS: MenuOption[] = [
   { label: "Buy Sensor", icon: ShoppingBag, view: "buy-sensor" },
   { label: "Heart Rate Monitor", icon: HeartPulse, view: "heart-rate-monitor" },
   { label: "Stroke Estimator", icon: Calculator, view: "stroke-estimator" },
-  { label: "rowerM8", icon: Waves, view: "rowerm8" },
+  { label: "ergM8", icon: Waves, view: "rowerm8" },
 ];
 
 interface Props {
