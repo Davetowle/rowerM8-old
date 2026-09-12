@@ -8,7 +8,8 @@ export type View =
   | "heart-rate-monitor"
   | "stroke-estimator"
   | "rowerm8"
-  | "distance-per-stroke";
+  | "distance-per-stroke"
+  | "account";
 
 export interface SessionRecord {
   id: string;

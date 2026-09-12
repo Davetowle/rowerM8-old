@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, Bluetooth, ShoppingBag, HeartPulse, Calculator, Waves, LogOut, User, Ruler } from "lucide-react";
+import { Menu, X, Bluetooth, ShoppingBag, HeartPulse, Calculator, Waves, LogOut, User, Ruler, UserCircle } from "lucide-react";
 import { SpmControl } from "@/components/SpmControl";
 import type { View } from "@/types";
 
@@ -16,6 +16,7 @@ const MENU_OPTIONS: MenuOption[] = [
   { label: "Heart Rate Monitor", icon: HeartPulse, view: "heart-rate-monitor" },
   { label: "Stroke Estimator", icon: Calculator, view: "stroke-estimator" },
   { label: "ergM8", icon: Waves, view: "rowerm8" },
+  { label: "Account", icon: UserCircle, view: "account" },
 ];
 
 interface Props {

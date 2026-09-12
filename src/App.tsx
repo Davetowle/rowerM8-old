@@ -13,6 +13,7 @@ import { StrokeEstimatorScreen } from "@/screens/StrokeEstimatorScreen";
 import { HeartRateMonitorScreen } from "@/screens/HeartRateMonitorScreen";
 import { DpsScreen } from "@/screens/DpsScreen";
 import { AuthScreen } from "@/screens/AuthScreen";
+import { AccountScreen } from "@/screens/AccountScreen";
 import { useMetronome } from "@/hooks/useMetronome";
 import { useMetersPerStroke } from "@/hooks/useMetersPerStroke";
 import { unlockAudio, startSilentLoop, stopSilentLoop, playBeep } from "@/lib/audio";
@@ -251,6 +252,13 @@ export default function App() {
         )}
         {view === "heart-rate-monitor" && (
           <HeartRateMonitorScreen onBack={() => setView("home")} />
+        )}
+        {view === "account" && (
+          <AccountScreen
+            onBack={() => setView("home")}
+            onAccountDeleted={() => setView("home")}
+            userEmail={session.user.email}
+          />
         )}
         {isComingSoon && COMING_SOON_SCREENS[view] && (
           <ComingSoonScreen
