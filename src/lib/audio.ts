@@ -22,21 +22,32 @@ export function playBeep(volume = 1.0): void {
   const ac = getCtx();
   const now = ac.currentTime;
 
+  // Compressor lets us push gain well above unity without harsh clipping
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -10;
+  comp.knee.value = 8;
+  comp.ratio.value = 4;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.1;
+  comp.connect(ac.destination);
+
+  const peakGain = volume * 2.5;
+
   // --- Body: sine wave with pitch drop for the "thump" ---
   const osc = ac.createOscillator();
   osc.type = "sine";
-  osc.frequency.setValueAtTime(180, now);
-  osc.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+  osc.frequency.setValueAtTime(220, now);
+  osc.frequency.exponentialRampToValueAtTime(55, now + 0.08);
 
   const gain = ac.createGain();
   gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(volume, now + 0.002);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+  gain.gain.linearRampToValueAtTime(peakGain, now + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
 
   osc.connect(gain);
-  gain.connect(ac.destination);
+  gain.connect(comp);
   osc.start(now);
-  osc.stop(now + 0.16);
+  osc.stop(now + 0.2);
 
   // --- Transient: short low-passed noise burst for the "slap" ---
   const noiseBuffer = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
@@ -49,17 +60,17 @@ export function playBeep(volume = 1.0): void {
 
   const noiseFilter = ac.createBiquadFilter();
   noiseFilter.type = "lowpass";
-  noiseFilter.frequency.value = 800;
+  noiseFilter.frequency.value = 1200;
 
   const noiseGain = ac.createGain();
-  noiseGain.gain.setValueAtTime(volume * 0.45, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+  noiseGain.gain.setValueAtTime(peakGain * 0.6, now);
+  noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
 
   noise.connect(noiseFilter);
   noiseFilter.connect(noiseGain);
-  noiseGain.connect(ac.destination);
+  noiseGain.connect(comp);
   noise.start(now);
-  noise.stop(now + 0.05);
+  noise.stop(now + 0.06);
 }
 
 /**

@@ -79,7 +79,7 @@ export function useMetronome() {
           cycleStartRef.current = now;
         }
         setStrokeCount((c) => c + 1);
-        playBeep();
+        playBeep(1.0);
         setPhase(0);
       }
 

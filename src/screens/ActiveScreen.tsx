@@ -59,10 +59,10 @@ export function ActiveScreen({
 
         {/* Center: stroke pulse dot + SPM */}
         <div className="flex flex-col items-center gap-10 w-full">
-          <div className="h-10 flex items-center justify-center">
+          <div className="h-20 flex items-center justify-center">
             <div
               key={strokeCount}
-              className="h-3 w-3 rounded-full bg-slate-700 animate-stroke-pulse"
+              className="h-16 w-16 rounded-full bg-slate-700 animate-stroke-pulse"
             />
           </div>
 
