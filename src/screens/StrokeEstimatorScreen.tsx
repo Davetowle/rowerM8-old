@@ -4,7 +4,6 @@ import { SpmControl } from "@/components/SpmControl";
 import { SummaryScreen } from "@/screens/SummaryScreen";
 import { useMetronome } from "@/hooks/useMetronome";
 import { unlockAudio, startSilentLoop, stopSilentLoop } from "@/lib/audio";
-import { speak, stopSpeaking } from "@/lib/speech";
 import { formatTime } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 import type { SessionRecord } from "@/types";
@@ -54,13 +53,8 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
   const distance = Math.min(metro.strokeCount * metersPerStroke, targetMeters);
   const progress = Math.min(distance / targetMeters, 1);
 
-  const announceRate = useCallback((spm: number) => {
-    speak(`${spm} strokes per minute`);
-  }, []);
-
   const handleStop = useCallback(() => {
     metro.stop();
-    stopSpeaking();
     stopSilentLoop();
     const avgSpm =
       spmHistoryRef.current.length > 0
@@ -91,7 +85,6 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      stopSpeaking();
       stopSilentLoop();
     };
   }, []);
@@ -137,7 +130,6 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
     sessionStartRef.current = Date.now();
     setPhase("running");
     metro.start();
-    announceRate(metro.spm);
   }
 
   function adjustDistance(delta: number) {
@@ -147,9 +139,6 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
   function handleAdjust(delta: number) {
     const newSpm = metro.adjustSpm(delta);
     spmHistoryRef.current.push(newSpm);
-    if (metro.running) {
-      announceRate(newSpm);
-    }
   }
 
   async function handleSaveSession() {
@@ -182,7 +171,6 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
 
   function handleBack() {
     metro.stop();
-    stopSpeaking();
     stopSilentLoop();
     onBack();
   }

@@ -17,7 +17,6 @@ import { AccountScreen } from "@/screens/AccountScreen";
 import { useMetronome } from "@/hooks/useMetronome";
 import { useMetersPerStroke } from "@/hooks/useMetersPerStroke";
 import { unlockAudio, startSilentLoop, stopSilentLoop, playBeep } from "@/lib/audio";
-import { speak, stopSpeaking } from "@/lib/speech";
 import { supabase } from "@/lib/supabase";
 import type { SessionRecord, View } from "@/types";
 import type { LucideIcon } from "lucide-react";
@@ -82,23 +81,13 @@ export default function App() {
     };
   }, [view, confirmDiscard]);
 
-  const announceRate = useCallback((spm: number) => {
-    speak(`${spm} strokes per minute`);
-  }, []);
-
   const handleCountdownBeep = useCallback((value: number) => {
     if (value > 0) {
-      speak(String(value));
       playBeep(0.7);
     } else {
-      speak("row");
       playBeep(0.9);
     }
   }, []);
-
-  const handleRunning = useCallback(() => {
-    announceRate(metro.spm);
-  }, [announceRate, metro.spm]);
 
   const handleStart = useCallback(() => {
     unlockAudio();
@@ -106,14 +95,13 @@ export default function App() {
     spmHistoryRef.current = [metro.spm];
     sessionStartRef.current = Date.now();
     setView("active");
-    metro.start(handleCountdownBeep, handleRunning);
-  }, [metro, handleCountdownBeep, handleRunning]);
+    metro.start(handleCountdownBeep);
+  }, [metro, handleCountdownBeep]);
 
   const [saving, setSaving] = useState(false);
 
   const handleStop = useCallback(() => {
     metro.stop();
-    stopSpeaking();
     stopSilentLoop();
     const duration = metro.elapsed;
     const avgSpm =
@@ -165,11 +153,8 @@ export default function App() {
     (delta: number) => {
       const newSpm = metro.adjustSpm(delta);
       spmHistoryRef.current.push(newSpm);
-      if (metro.state === "running") {
-        announceRate(newSpm);
-      }
     },
-    [metro, announceRate]
+    [metro]
   );
 
   const handleLogout = useCallback(async () => {
