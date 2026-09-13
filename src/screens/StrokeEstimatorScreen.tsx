@@ -275,19 +275,13 @@ export function StrokeEstimatorScreen({ onBack, metersPerStroke, confirmDiscard,
         </div>
       </div>
 
-      {/* Phase bar during running */}
+      {/* Stroke pulse dot during running */}
       {phase === "running" && (
-        <div className="w-full max-w-xs mx-auto mb-8">
-          <div className="flex justify-between text-xs uppercase tracking-widest mb-2">
-            <span className="text-cyan-400 font-medium">Drive</span>
-            <span className="text-slate-500 font-medium">Recovery</span>
-          </div>
-          <div className="h-4 rounded-full bg-slate-800 overflow-hidden border border-white/5">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-cyan-300 transition-[width] duration-75 ease-linear"
-              style={{ width: `${Math.round(metro.phase * 100)}%` }}
-            />
-          </div>
+        <div className="h-20 flex items-center justify-center mb-8">
+          <div
+            key={metro.strokeCount}
+            className="h-16 w-16 rounded-full bg-slate-700 animate-stroke-pulse"
+          />
         </div>
       )}
 
