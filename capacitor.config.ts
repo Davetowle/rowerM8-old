@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.strokem8.app',
-  appName: 'strokeM8',
+  appId: 'com.rowerm8.app',
+  appName: 'rowerM8',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
